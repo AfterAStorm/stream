@@ -104,7 +104,7 @@ flow.load().then(() => {
             const div = document.createElement('div')
             div.classList.add('category-item')
             div.innerHTML = `<img width="40" height="40"
-src="${nd.icon.replace('$assets', `/flows/${flow.id}/assets`)}"><span>${nd.display}</span>`
+src="${nd.icon.replace('$assets', `../../flows/${flow.id}/assets`)}"><span>${nd.display}</span>`
 
             div.addEventListener('pointerdown', e => {
                 creatingNode = new nd()

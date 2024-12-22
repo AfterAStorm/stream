@@ -56,7 +56,7 @@ export class Flow {
      */
     async load() {
         // fetch manifest
-        const manifestRequest = await fetch(`/flows/${this.id}/flow.json`)
+        const manifestRequest = await fetch(`../../flows/${this.id}/flow.json`)
         const manifest = await manifestRequest.json()
 
         const job = []
@@ -64,7 +64,7 @@ export class Flow {
         // load points
         manifest.points.forEach(point => {
             job.push(new Promise(async res => {
-                const request = await fetch(`/flows/${this.id}/points/${point}.json`)
+                const request = await fetch(`../../flows/${this.id}/points/${point}.json`)
                 const pointType = await request.json()
                 this.connectionPointTypes[pointType.id] = pointType
                 res()
@@ -74,7 +74,7 @@ export class Flow {
         // load connections
         manifest.connections.forEach(connection => {
             job.push(new Promise(async res => {
-                const module = await import(`/flows/${this.id}/connections/${connection}.js`)
+                const module = await import(`../../flows/${this.id}/connections/${connection}.js`)
                 this.connectionDefinitions[module.Connection.id] = module.Connection
                 res()
             }))
@@ -83,7 +83,7 @@ export class Flow {
         // load nodes
         manifest.nodes.forEach(node => {
             job.push(new Promise(async res => {
-                const module = await import(`/flows/${this.id}/nodes/${node}.js`)
+                const module = await import(`../../flows/${this.id}/nodes/${node}.js`)
                 this.nodeDefinitions[module.Node.id] = module.Node
                 res()
             }))
