@@ -1,8 +1,10 @@
 /* web */
 
 import { Flow } from "./flow.js"
-//import { LZString } from "./vendor/.lz-string.min.js"
-import JSONCrush from "./vendor/JSONCrush.min.js"
+import { LZString } from "./vendor/lz-string.min.js" // is faster but is slightly less effective
+import JSONCrush from "./vendor/JSONCrush.min.js" // is considerably slower but is a bit better compression wise
+
+// for now, we support JSONCrushed strings (if they start with a "("), but we only export as lz-string compressed
 
 // canvas
 var canvas, context
@@ -38,7 +40,9 @@ var hoveredConnection = null
 function decompress(flowString) {
     return flowString.startsWith('ey') ? 
             JSON.parse(atob(flowString)) :
-            JSON.parse(JSONCrush.uncrush(flowString))
+            (flowString.startsWith('(') ? JSON.parse(JSONCrush.uncrush(flowString)) :
+            JSON.parse(LZString.decompressFromEncodedURIComponent(flowString)))
+            
 }
 
 const params = new URLSearchParams(location.search)
@@ -46,7 +50,7 @@ const share = params.get('share')
 var flow
 if (share != null) {
     try {
-        const shareJson = decompress(share)//LZString.decompressFromEncodedURIComponent(share))
+        const shareJson = decompress(share)
         pan = shareJson.pan || [0, 0]
         scale = shareJson.scale || 1
         flow = new Flow()
@@ -634,8 +638,9 @@ async function main() {
                 // make it so it isn't instantly resolved so it doesn't block the click listener
                 saveDialogStatus.innerText = 'compressing...'
                 await new Promise(res => setTimeout(res, 1))
-                const compressed = JSONCrush.crush(encoded)
-                res(compressed)//LZString.compressToEncodedURIComponent(encoded))
+                console.log(encoded)
+                const compressed = LZString.compressToEncodedURIComponent(encoded)//JSONCrush.crush(encoded)
+                res(compressed)
             }).then(compressed => {
                 resf(encodeURIComponent(compressed))
                 saveDialog.close()
