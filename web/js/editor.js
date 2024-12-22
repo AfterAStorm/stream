@@ -638,7 +638,6 @@ async function main() {
                 // make it so it isn't instantly resolved so it doesn't block the click listener
                 saveDialogStatus.innerText = 'compressing...'
                 await new Promise(res => setTimeout(res, 1))
-                console.log(encoded)
                 const compressed = LZString.compressToEncodedURIComponent(encoded)//JSONCrush.crush(encoded)
                 res(compressed)
             }).then(compressed => {
