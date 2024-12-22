@@ -6,7 +6,7 @@ export class Node extends BaseNode {
     static id         = "zero_tick"
     static display    = "Zero Tick"
     static size       = [1, .5]
-    static icon       = "https://static.wikia.nocookie.net/oaklands/images/b/b0/Tether_boxed.png"
+    static icon       = "$assets/zero_tick.png"
     static category   = "utility"
 
     constructor() {

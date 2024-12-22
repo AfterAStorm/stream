@@ -6,7 +6,7 @@ export class Node extends BaseNode {
     static id         = "tether"
     static display    = "Tether"
     static size       = [1, .5]
-    static icon       = "https://static.wikia.nocookie.net/oaklands/images/b/b0/Tether_boxed.png"
+    static icon       = "$assets/tether.png"//"https://static.wikia.nocookie.net/oaklands/images/b/b0/Tether_boxed.png"
     static category   = "utility"
 
     constructor() {

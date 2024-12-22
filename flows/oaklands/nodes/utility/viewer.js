@@ -6,7 +6,7 @@ export class Node extends BaseNode {
     static id         = "viewer"
     static display    = "Viewer"
     static size       = [1, .5]
-    static icon       = "https://icon2.cleanpng.com/20180410/vde/avbaqf66l.webp"
+    static icon       = "$assets/viewer.png"
     static category   = "utility"
 
     constructor() {

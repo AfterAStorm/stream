@@ -6,7 +6,7 @@ export class Node extends BaseNode {
     static id         = "comment"
     static display    = "Comment"
     static size       = [2, .5]
-    static icon       = "https://icon2.cleanpng.com/20180410/vde/avbaqf66l.webp"
+    static icon       = "$assets/comment.png"//"https://icon2.cleanpng.com/20180410/vde/avbaqf66l.webp"
     static category   = "utility"
 
     constructor() {

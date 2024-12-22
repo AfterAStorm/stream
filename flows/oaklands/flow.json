@@ -16,6 +16,7 @@
         "input/button",
         "input/number_interface",
         "input/hertz_clock",
+        "input/frequency",
 
         "visual/lcd",
         "visual/7segment",
