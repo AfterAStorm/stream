@@ -46,9 +46,6 @@ export class Node extends BaseNode {
         if (this.isHoveringRectangle(pos, centerX - width / 2, centerY - height / 2, width, height)) {
             return false
         }
-        /*if (pos[0] >= centerX - width / 2 && pos[0] <= centerX - width / 2 + width && pos[1] >= centerY - height / 2 && pos[1] <= centerY - height / 2 + height) { // if less than radius
-            return false
-        }*/
         return hit
     }
 
@@ -72,7 +69,6 @@ export class Node extends BaseNode {
         const width = size[0] / 1.5
         const height = size[1] / 2
 
-        //if (pos[0] >= centerX - width / 2 && pos[0] <= centerX - width / 2 + width && pos[1] >= centerY - height / 2 && pos[1] <= centerY - height / 2 + height) { // if less than radius
         if (this.isHoveringRectangle(pos, centerX - width / 2, centerY - height / 2, width, height)) {
             this.cooldown = true
             this.pressed = !this.pressed

@@ -34,7 +34,6 @@ export class Node extends BaseNode {
     update() {
         super.update()
 
-        //const currentOutput = this.getLocalConnectionPointValue('#result')
         const input = this.getConnectionPointValue('#in')
         if (this.last != input) {
             this.last = input

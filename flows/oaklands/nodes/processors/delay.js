@@ -80,7 +80,6 @@ export class Node extends BaseNode {
         const centerX = size[0] / 2
         const centerY = size[1] / 2
         const radius = Math.min(centerX, centerY) / 2 / 1
-        const offset = radius / 3
         context.beginPath()
 
         // DELAY symbol
@@ -148,43 +147,6 @@ export class Node extends BaseNode {
         context.textBaseline = 'middle'
         context.font = '20px monospace'
         context.fillText(this.delay, centerX, size[1] + 10)
-
-        /*context.moveTo(centerX - radius, centerY - radius)
-        context.lineTo(centerX + radius, centerY - radius)
-
-        context.arc(centerX, centerY, radius, 0, Math.PI / 2)
-
-        context.moveTo(centerX, centerY + radius)
-        context.lineTo(centerX - radius, centerY + radius)
-        context.lineTo(centerX - radius, centerY - radius)
-        context.stroke()*/
-
-        /*// output line
-        const distanceFromSymbolToEdge = size[0] - (centerX + radius) - 7 / 2
-
-        context.strokeStyle = this.getConnectionPointValue('#result') > 0 ? this.ON_COLOR : this.OFF_COLOR
-        context.beginPath()
-        context.moveTo(centerX + radius, centerY - radius / 2)
-        context.lineTo(centerX + radius + distanceFromSymbolToEdge / 2, centerY - radius / 2)
-        context.lineTo(centerX + radius + distanceFromSymbolToEdge / 2, centerY)
-        context.lineTo(size[0] - 7, centerY)
-        context.stroke()
-
-        // left line
-        context.strokeStyle = this.getConnectionPointValue('#left') > 0 ? this.ON_COLOR : this.OFF_COLOR
-        context.beginPath()
-        var y = this.connectionPoints[0].position[1]
-        context.moveTo(7, y)
-        context.lineTo(centerX - radius, y)
-        context.stroke()
-
-        // right line
-        context.strokeStyle = this.getConnectionPointValue('#right') > 0 ? this.ON_COLOR : this.OFF_COLOR
-        context.beginPath()
-        y = this.connectionPoints[1].position[1]
-        context.moveTo(7, y)
-        context.lineTo(centerX - radius, y)
-        context.stroke()*/
 
     }
 }

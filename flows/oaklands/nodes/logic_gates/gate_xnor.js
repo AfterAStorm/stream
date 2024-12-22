@@ -49,12 +49,11 @@ export class Node extends BaseNode {
         const centerY = size[1] / 2
         const radius = Math.min(centerX, centerY) / 2 / 1
 
-        // OR GATE symbol
+        // XNOR GATE symbol
         context.lineCap = 'round'
 
         context.beginPath()
         context.bezierCurveTo(centerX - radius, centerY - radius, centerX + 10, centerY - 30, centerX + radius, centerY)
-        //context.ellipse(centerX - 15, centerY, radius + 15, radius, 0, Math.PI * 3 / 2, Math.PI / 2)
         context.stroke()
         
         context.beginPath()
@@ -63,12 +62,10 @@ export class Node extends BaseNode {
         
         context.beginPath()
         context.bezierCurveTo(centerX - radius, centerY - radius, centerX, centerY, centerX - radius, centerY + radius)
-        //context.ellipse(centerX - , centerY, 15, radius, 0, Math.PI * 3 / 2, Math.PI / 2)
         context.stroke()
         
         context.beginPath()
         context.bezierCurveTo(centerX - radius - 5, centerY - radius, centerX - 5, centerY, centerX - radius - 5, centerY + radius)
-        //context.ellipse(centerX - , centerY, 15, radius, 0, Math.PI * 3 / 2, Math.PI / 2)
         context.stroke()
 
         // output line
@@ -83,18 +80,6 @@ export class Node extends BaseNode {
         context.beginPath()
         context.ellipse(centerX + radius + 4, centerY, 4, 4, 0, 0, Math.PI * 2)
         context.stroke()
-
-
-
-        /*context.moveTo(centerX - radius, centerY - radius)
-        context.lineTo(centerX, centerY - radius)
-
-        context.arc(centerX, centerY, radius, -Math.PI / 2, Math.PI / 2)
-
-        context.moveTo(centerX, centerY + radius)
-        context.lineTo(centerX - radius, centerY + radius)
-        context.lineTo(centerX - radius, centerY - radius)
-        context.stroke()*/
 
         // left line
         context.strokeStyle = this.getConnectionPointValue('#left') > 0 ? this.ON_COLOR : this.OFF_COLOR

@@ -59,20 +59,7 @@ export class Node extends BaseNode {
         
         context.beginPath()
         context.bezierCurveTo(centerX - radius, centerY - radius, centerX, centerY, centerX - radius, centerY + radius)
-        //context.ellipse(centerX - , centerY, 15, radius, 0, Math.PI * 3 / 2, Math.PI / 2)
         context.stroke()
-
-
-
-        /*context.moveTo(centerX - radius, centerY - radius)
-        context.lineTo(centerX, centerY - radius)
-
-        context.arc(centerX, centerY, radius, -Math.PI / 2, Math.PI / 2)
-
-        context.moveTo(centerX, centerY + radius)
-        context.lineTo(centerX - radius, centerY + radius)
-        context.lineTo(centerX - radius, centerY - radius)
-        context.stroke()*/
 
         // output line
         context.strokeStyle = this.getLocalConnectionPointValue('#result') > 0 ? this.ON_COLOR : this.OFF_COLOR

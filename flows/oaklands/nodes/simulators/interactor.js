@@ -34,12 +34,6 @@ export class Node extends BaseNode {
         const value = this.getConnectionPointValue('#input')
 
         // draw antenna
-        /*context.fillStyle = value > 0 ? 'green' : 'red'
-        context.strokeStyle = 'grey' //value > 0 ? 'grey' : 'maroon'
-        context.beginPath()
-        context.arc(size[0] / 2, size[1] / 2, size[0] / 2 / 1.5, 0, Math.PI * 2)
-        context.fill()
-        context.stroke()*/
         context.fillStyle = 'lightgrey'
         context.beginPath()
         context.moveTo(size[0], centerY - 5)

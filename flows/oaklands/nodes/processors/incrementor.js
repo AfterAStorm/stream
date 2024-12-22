@@ -68,7 +68,7 @@ export class Node extends BaseNode {
         const radius = Math.min(centerX, centerY) / 2 / 1
         context.beginPath()
 
-        // GREATER THAN GATE symbol
+        // INCREMENTOR symbol
         context.lineCap = 'round'
         context.moveTo(centerX - radius, centerY - radius)
         context.lineTo(centerX - radius, centerY + radius)
@@ -79,6 +79,5 @@ export class Node extends BaseNode {
         for (let i = 0; i < 5; i++) {
             context.fillRect(centerX - radius, centerY - radius + i * barHeight, radius * 2 * ((i + 1) / 5), barHeight - 1)
         }
-
     }
 }

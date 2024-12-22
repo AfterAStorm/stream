@@ -11,9 +11,9 @@ export class Node extends BaseNode {
 
     constructor() {
         super()
-        this.addConnectionPoint('input', 'left', '#left', 'Left Input')
-        this.addConnectionPoint('input', 'left', '#right', 'Right Input')
-        this.addConnectionPoint('output', 'right', '#result', 'Operation Result')
+        this.addConnectionPoint('input', 'left', '#left', 'Left Input, x of x op y')
+        this.addConnectionPoint('input', 'left', '#right', 'Right Input, y of x op y')
+        this.addConnectionPoint('output', 'right', '#result', 'Operation Result, x (+/-/*/÷/^) y')
         this.setConnectionPointValue('#result', 0)
 
         /*

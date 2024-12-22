@@ -36,23 +36,6 @@ export class Node extends BaseNode {
             this.setConnectionPointValue('#number', output)
         }
 
-        /*const num = this.getConnectionPointValue('#number')
-        if (this.last != num) {
-            const numStr = num.toString()
-            this.last = num
-            for (let i = 0; i < 4; i++) {
-                const id = `#result${i + 1}`
-                if (numStr.length < i + 1)
-                    this.setConnectionPointValue(id, 0)
-                else
-                    this.setConnectionPointValue(id, parseInt(numStr.substring(numStr.length - i, numStr.length - i - 1)))
-            }
-            if (numStr.length > 4)
-                this.setConnectionPointValue('#result5', parseInt(numStr.substring(0, numStr.length - 4)))
-            else
-                this.setConnectionPointValue('#result5', 0)
-        }*/
-
         // changing value
 
         const isPressed = this.isPointerPressed()

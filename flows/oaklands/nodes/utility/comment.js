@@ -29,7 +29,6 @@ export class Node extends BaseNode {
     }
 
     update() {
-        //console.log('tether update')
         super.update()
 
         // changing value

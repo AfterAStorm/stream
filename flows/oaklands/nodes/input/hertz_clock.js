@@ -11,7 +11,7 @@ export class Node extends BaseNode {
 
     constructor() {
         super()
-        this.addConnectionPoint('output', 'right', '#result', 'Clock Signal, on and off x times per second\n**Outputs: ⚡ 10')
+        this.addConnectionPoint('output', 'right', '#result', 'Clock Signal, on and off x times per second\n(the game actually treats this incorrectly I think, I believe it\'s supposed to be x2 faster)\n**Outputs: ⚡ 10')
         this.setConnectionPointValue('#result', 0)
 
         this.hertz = 1

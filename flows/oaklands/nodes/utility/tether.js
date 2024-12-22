@@ -19,7 +19,6 @@ export class Node extends BaseNode {
     }
 
     update() {
-        //console.log('tether update')
         super.update()
 
         // output
@@ -41,8 +40,6 @@ export class Node extends BaseNode {
         
         const centerX = size[0] / 2
         const centerY = size[1] / 2
-
-        // draw stuff
 
         const radius = Math.min(centerX, centerY) / 2 / 1
 

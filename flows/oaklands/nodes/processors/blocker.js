@@ -45,7 +45,7 @@ export class Node extends BaseNode {
         const centerY = size[1] / 2
         const radius = Math.min(centerX, centerY) / 2 / 1
 
-        // AND GATE symbol
+        // BLOCKER symbol
         context.lineCap = 'round'
         context.beginPath()
         context.rect(centerX - radius / 2, centerY - radius, radius, radius * 2)

@@ -12,7 +12,7 @@ export class Node extends BaseNode {
     constructor() {
         super()
         this.addConnectionPoint('input', 'left', '#signal', 'Passthrough, what to output on each activation')
-        this.addConnectionPoint('output', 'right', '#result', 'Clock Signal, on and off x times per second\n**Outputs: ⚡ 10')
+        this.addConnectionPoint('output', 'right', '#result', 'Clock Signal, on for x seconds and off for x seconds\n**Outputs: ⚡ 10')
         this.setConnectionPointValue('#result', 0)
 
         this.speed = 1
