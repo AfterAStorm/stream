@@ -675,6 +675,13 @@ async function main() {
         }
     })
 
+    var editToggled = true
+    document.querySelector('#edit-toggle').addEventListener('click', () => {
+        editToggled = !editToggled
+        document.querySelector('#edit-toggle').innerText = editToggled ? '<' : '>'
+        document.querySelector('#edit-options').classList.toggle('hidden', !editToggled)
+    })
+
     if (localStorage != null && localStorage.getItem('visited') == null) {
         localStorage.setItem('visited', Date.now())
         document.querySelector('#help-input').showModal()

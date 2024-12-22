@@ -124,9 +124,9 @@ dialog {
     user-select: none;
 }
 
-/* JUST GET IT DONE styling */
+/* edit option styling */
 
-#connection-color-container {
+#edit-options {
     position: absolute;
     left: 200px;
     top: 50px;
@@ -136,13 +136,34 @@ dialog {
     margin: 10px;
 }
 
-#connection-color-container > * {
+#edit-options > div {
+    height: 30px;
+}
+
+#edit-options > * {
     height: 15px;
     border: none;
 }
 
-#connection-color-container > input {
+#edit-options > * > input {
     width: 30px;
+    height: 20px;
+    margin-left: 5px;
+}
+
+#edit-options > * > input[type=checkbox] {
+    width: 15px;
+    height: 15px;
+}
+
+#edit-options > * > button {
+    width: 20px;
+    height: 20px;
+    border-radius: 100%;
+}
+
+.hidden > div:not(:has(button)) {
+    display: none;
 }
 
 /* miscellaneous */
@@ -185,5 +206,8 @@ p {
     }
     #readonly-warning {
         display: initial !important;
+    }
+    #edit-options {
+        display: none;
     }
 }
