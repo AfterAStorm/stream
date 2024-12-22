@@ -503,8 +503,11 @@ async function main() {
             const maxY = Math.max(selectStart[1], lastPointerPos[1])
 
             const nodes = flow.nodes.filter(n => {
-                const p = n.getRelative(0, 0) // based on top left point (when not rotated)... so.. it's fine for now
-                return -p[0] >= minX && -p[0] <= maxX && -p[1] >= minY && -p[1] <= maxY
+                const a = n.getRelative(minX, minY)
+                const b = n.getRelative(maxX, maxY)
+                return a[0] <= 0 && a[1] <= 0 && b[0] >= 0 && b[1] >= 0
+                //const p = n.getRelative(0, 0) // based on top left point (when not rotated)... so.. it's fine for now
+                //return -p[0] >= minX && -p[0] <= maxX && -p[1] >= minY && -p[1] <= maxY
             })
             if (selectedNodes != null)
                 selectedNodes.forEach(n => n.ghost = false)
