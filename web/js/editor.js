@@ -668,7 +668,7 @@ async function main() {
 
         if (value != '#close') {
             const url = new URL(location.href)
-            fetch(`/flows/${flow.id}/examples/${value}.flow`).then(r => r.text()).then(example => {
+            fetch(`../../flows/${flow.id}/examples/${value}.flow`).then(r => r.text()).then(example => {
                 history.pushState(null, '', `${url.origin}${url.pathname}?share=${example}`)
                 location.reload()
             })
