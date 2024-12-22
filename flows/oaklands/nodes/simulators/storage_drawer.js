@@ -1,6 +1,6 @@
 /* node */
 
-import { BaseNode } from "/flows/node.js"
+import { BaseNode } from "../../../node.js"
 
 function lerp(a, b, t) {
     return a + (b - a) * t

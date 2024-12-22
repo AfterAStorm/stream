@@ -1,6 +1,6 @@
 /* node */
 
-import { BaseNode } from "/flows/node.js"
+import { BaseNode } from "../../../node.js"
 
 export class Node extends BaseNode {
     static id         = "gate_relay"

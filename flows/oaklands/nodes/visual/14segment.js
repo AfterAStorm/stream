@@ -1,6 +1,6 @@
 /* node */
 
-import { BaseNode } from "/flows/node.js"
+import { BaseNode } from "../../../node.js"
 
 const colorMap = {
     0: '#f4f4f4',
