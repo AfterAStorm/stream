@@ -1,0 +1,51 @@
+{
+    "points": [
+        "input",
+        "output"
+    ],
+    
+    "connections": [
+        "wire"
+    ],
+
+    "nodes": [
+        "input/switch",
+        "input/button",
+        "input/number_interface",
+        "input/hertz_clock",
+
+        "visual/lcd",
+        "visual/7segment",
+        "visual/14segment",
+
+        "logic_gates/gate_and",
+        "logic_gates/gate_or",
+        "logic_gates/gate_not",
+        "logic_gates/gate_xor",
+        "logic_gates/gate_xnor",
+        "logic_gates/gate_relay",
+        "logic_gates/gate_greater_than",
+
+        "processors/memory_cell",
+        "processors/computer",
+        "processors/incrementor",
+        "processors/number_splitter",
+        "processors/number_combiner",
+        "processors/delay",
+        "processors/sustainer",
+        "processors/tflipflop",
+
+        "processors/blocker",
+        "processors/signal_lock",
+
+        "utility/tether",
+        "utility/zero_tick",
+        "utility/comment",
+        "utility/viewer",
+
+        "simulators/interactor",
+        "simulators/collider"
+    ],
+
+    "updateSpeed": 0.03333333333
+}

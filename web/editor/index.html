@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>stream</title>
+        <link rel="stylesheet" href="../css/editor.css">
+        <script language="javascript" src="../js/editor.js" type="module" async></script>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+        <meta name="viewport" content="user-scalable=0, maximum-scale=1, minimum-scale=1">
+        <!-- meta gaming -->
+        <meta name="title" content="stream">
+        <!--<meta name="description" content="With stream, you can create node flows to test ideas, manage devices, and more all through a node-based editor.">-->
+        <meta name="description" content="With stream, you can create node flows with pre-defined environments to create and innovate.">
+    </head>
+    <body>
+        <dialog id="readonly-warning">
+            <form method="dialog">
+                <h1>Uh oh!</h1>
+                <p><i>You seem to be using a mobile or small device:</i></p>
+                <p>You will only be able to view the flow, and not edit it.</p>
+                <button onclick="this.parentElement.parentElement.style = 'display: none !important;'">Dismiss</button>
+            </form>
+        </dialog>
+        <dialog id="text-input">
+            <form method="dialog">
+                <p>Enter new value:</p>
+                <input id="text-input-value" type="text" onfocusout="this.parentElement.submit()" autocomplete="off" autofocus>
+            </form>
+        </dialog>
+        <dialog id="help-input">
+            <form method="dialog">
+                <h1>stream help</h1>
+                <p>Hello! storm here :3</p>
+                <h2>Disclaimer</h2>
+                <p>This is merely a simulation of a simulation, and results in-game are not guaranteed to be accurate with results here.</p>
+                <h3>Basics</h3>
+                <p>To add a node, drag it from the list on the left.</p>
+                <p>To connect nodes, click their connection points; intermediate points will be extra points for visual effect.</p>
+                <p>To see a points purpose and status, hover over it; same goes for connections</p>
+                <h3>Nodes</h3>
+                <p>To select a node, click it anywhere (excluding select interactable parts); hold shift to select multiple</p>
+                <p>To drag nodes, select them and drag them</p>
+                <p>To delete a node, select it/them and right click one of them</p>
+                <h3>Saving & Sharing</h3>
+                <p>To save or share your creation, click the <span class="material-symbols-outlined">save</span> icon in the top right.</p>
+                <p>To view some examples, click the <span class="material-symbols-outlined">topic</span> icon in the top right.</p>
+                <h3>Connections</h3>
+                <p>You can delete connections with right click</p>
+                <p>You can add extra points by clicking and dragging anywhere on the connection</p>
+                <p>You can move extra points by clicking and dragging the points</p>
+                <p>You can delete extra points with right click</p>
+                <h3>Hotkeys & Advanced Features</h3>
+                <p>Use <b>R</b> to rotate nodes by 90deg increments -- <i>Some nodes may be selected/interacted weirdly while rotated, it'll be fixed at some point</i></p>
+                <p>Use <b>E</b> to clone a connection at a hovered point, requires at least 1 extra point (aka: that isn't output to input)</p>
+                <p>Use <b>F</b> to clone selected nodes (and the nodes' associated connections)</p>
+                <p>Hold <b>Shift</b> while placing connections to continue placing connections</p>
+                <p>Hold <b>Control</b> and drag to multi-select; it's based on the nodes upper most left point at zero rotation.</p>
+                <h2>Contributing & Support</h2>
+                <p>If you wish to create any PRs or even dare look at the "<i>codebase</i>", goodluck.</p>
+                <p class="inline">For any suggestions/etc. contact <div class="spoiler">me</div> on discord</p>
+                <br />
+                <p><i>"stream", "flow", get it? hehehe</i></p>
+                <br />
+                <p><i>Click/tap anywhere to close</i></p>
+                <button onfocusout="this.parentElement.submit()" style="height: 0; border: none; position: absolute;" focused></button>
+            </form>
+        </dialog>
+        <dialog id="share-input">
+            <form method="dialog">
+                <p>The page's URL has been updated with the saved flow.</p>
+                <p><i>To share it, copy it and send it wherever you so desire... it's pretty long though!</i></p>
+                <p>At some point it might grow to large to where inputting it will give you an error, this is where you download it instead!</p>
+                <button onfocusout="this.parentElement.submit()">Ok</button>
+            </form>
+        </dialog>
+        <dialog id="example-input">
+            <form method="dialog">
+                <h1>stream examples</h1>
+                <h3>Here is some examples to get you started:</h3>
+                <p><i>Clicking/interacting will replace the URL deleting any progress, beware!</i></p><br />
+                <br />
+                <p><button value="new">New</button> <i>Create a blank flow</i></p>
+                <br />
+                <p><button value="logic_gates">Logic Gate Comparisons</button> <i>All of the logic gates in a "truth table" format</i></p>
+                <br />
+                <p><button value="tetherness">Tether Madness</button> <i>Fun fact you can do with looping wires</i></p>
+                <br /><br />
+                <button onfocusout="this.parentElement.parentElement.returnValue = '#close'; this.parentElement.submit()" value="#close">Nevermind</button>
+            </form>
+        </dialog>
+        <dialog id="saving-notice">
+            <form method="dialog">
+                <h1>saving...</h1>
+                <p>bigger flows mean bigger goals!</p>
+                <p><i id="saving-notice-status"></i></p>
+            </form>
+        </dialog>
+        <nav id="topbar">
+            <h2>stream</h2>
+            <div id="buttons">
+                <button id="upload" class="button">
+                    <span class="icon material-symbols-outlined">upload</span>
+                </button>
+                <button id="download" class="button">
+                    <span class="icon material-symbols-outlined">download</span>
+                </button>
+                <input id="file" type="file" accept=".flow" hidden />
+                <button id="save" class="button">
+                    <span class="icon material-symbols-outlined">save</span>
+                </button>
+                <button id="examples" class="button">
+                    <span class="icon material-symbols-outlined">topic</span>
+                </button>
+                <button id="help" class="button">
+                    <span class="icon material-symbols-outlined">help</span>
+                </button>
+                <button id="fullscreen" class="button">
+                    <span class="icon material-symbols-outlined">fullscreen</span>
+                </button>
+            </div>
+        </nav>
+        <div id="content">
+            <div id="sidebar">
+                <!--
+                <div class="category"><span>logic gates</span></div>
+                <div class="category-items">
+                    <div class="category-item"><img width="40" height="40" src="https://static.wikia.nocookie.net/oaklands/images/c/c7/ANDComponent.png"><span>AND</span></div>
+                </div>
+                -->
+            </div>
+            <canvas id="chart">
+            </canvas>
+            <div id="connection-color-container">
+                <span>Connection Color: </span><input value="#ff0000" type="color" id="connection-color">
+            </div>
+        </div>
+    </body>
+</html>

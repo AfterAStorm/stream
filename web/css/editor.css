@@ -1,0 +1,189 @@
+/* editor */
+
+html, body {
+    height: 100%;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+/* dialog styling */
+
+dialog {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: none;
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 5px;
+}
+
+/* topbar styling */
+
+#topbar {
+    height: 50px;
+    background-color: #bfb3ff;
+    padding: 0 5px 0 5px;
+    display: flex;
+    align-items: center;
+}
+
+#topbar > h2 {
+    width: fit-content;
+    align-self: center;
+    font-family: monospace;
+    font-size: 30px;
+}
+
+#buttons {
+    margin-left: auto;
+    margin-right: 5px;
+}
+
+.button {
+    outline: none;
+    background-color: transparent;
+    background-repeat: none;
+    border: none;
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24;
+}
+
+.icon {
+  width: 30px;
+  height: 30px;
+  line-height: 30px !important;
+}
+
+/* sidebar styling */
+
+#sidebar {
+    width: 200px;
+    height: 100%;
+    background-color: #9f97cc;
+    flex-shrink: 0; /* prevent flexbox taking over */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.category {
+    width: 100%;
+    text-align: left;
+    background-color: #8e87b6;
+    font-size: 20px;
+    font-family: monospace;
+    padding-left: 2px;
+    cursor: pointer;
+}
+
+.minimized {
+    display: none;
+}
+
+.category-item {
+    user-select: none;
+    display: flex;
+    height: 100%;
+    align-items: center;
+    background-color: #9891c2;
+    font-weight: bold;
+    font-size: 20px;
+    font-family: monospace;
+}
+
+.category-item > span {
+    margin-left: 5px;
+}
+
+.category-item:hover {
+    background-color: #8f86c5;
+}
+
+.category-item > img {
+    object-fit: contain; /* make images not stretch */
+}
+
+/* chart styling */
+
+#chart {
+    background-color: #777196;
+    width: 0;
+    height: 100%;
+    flex-grow: 1;
+    touch-action: none;
+    user-select: none;
+}
+
+/* JUST GET IT DONE styling */
+
+#connection-color-container {
+    position: absolute;
+    left: 200px;
+    top: 50px;
+    height: 15px;
+    font-size: 15px;
+    color: white;
+    margin: 10px;
+}
+
+#connection-color-container > * {
+    height: 15px;
+    border: none;
+}
+
+#connection-color-container > input {
+    width: 30px;
+}
+
+/* miscellaneous */
+
+#content {
+    height: calc(100% - 50px);
+    display: flex;
+}
+
+#readonly-warning {
+    display: none;
+    width: 80%;
+}
+
+p {
+    display: block;
+}
+
+.inline {
+    display: inline-block;
+}
+
+.spoiler {
+    background-color: #000;
+    color: #000;
+    display: inline-block;
+    margin-left: 4px;
+}
+
+.spoiler:hover {
+    background-color: transparent;
+    text-decoration: underline;
+}
+
+/* media conditions */
+
+@media screen and (max-width: 980px) {
+    #sidebar, #buttons {
+        display: none;
+    }
+    #readonly-warning {
+        display: initial !important;
+    }
+}

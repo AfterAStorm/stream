@@ -1,0 +1,6 @@
+{
+    "id": "output",
+    "display": "Output",
+    "connects": ["input"],
+    "connection": "wire"
+}
