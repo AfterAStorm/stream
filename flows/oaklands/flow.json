@@ -48,7 +48,10 @@
         "utility/viewer",
 
         "simulators/interactor",
-        "simulators/collider"
+        "simulators/collider",
+        "simulators/donator",
+        "simulators/transmitter",
+        "simulators/receiver"
     ],
 
     "updateSpeed": 0.03333333333
