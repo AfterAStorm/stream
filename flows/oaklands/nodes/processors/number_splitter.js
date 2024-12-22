@@ -6,7 +6,7 @@ export class Node extends BaseNode {
     static id         = "number_splitter"
     static display    = "Number Splitter"
     static size       = [1, 1.5]
-    static icon       = "https://static.wikia.nocookie.net/oaklands/images/6/69/Calculator_boxed.png"
+    static icon       = "$assets/bit_out.png"
     static category   = "processors"
 
     constructor() {
@@ -77,7 +77,50 @@ export class Node extends BaseNode {
         
         const centerX = size[0] / 2
         const centerY = size[1] / 2
-
         
+        // input line
+        context.strokeStyle = this.getLocalConnectionPointValue('#number') > 0 ? this.ON_COLOR : this.OFF_COLOR
+        context.beginPath()
+        context.moveTo(7, centerY)
+        context.lineTo(centerX - 10, centerY)
+        context.stroke()
+
+        // output lines
+        for (let i = 0; i < 5; i++) {
+            const point = this.getConnectionPoint(`#result${i + 1}`)
+            const y = point.staticPosition[1]
+            context.strokeStyle = point.value > 0 ? this.ON_COLOR : this.OFF_COLOR
+            context.beginPath()
+            context.moveTo(centerX + 10, y)
+            context.lineTo(size[0] - 7, y)
+            context.stroke()
+        }
+
+        // symbol
+        context.lineCap = 'round'
+        context.strokeStyle = '#000'
+        context.beginPath()
+        context.moveTo(centerX - 10, centerY - size[1] / 2 + 10) // left
+        context.lineTo(centerX - 10, centerY + size[1] / 2 - 10)
+        context.stroke()
+        
+        context.beginPath()
+        context.moveTo(centerX + 10, centerY - size[1] / 2 + 20) // right
+        context.lineTo(centerX + 10, centerY + size[1] / 2 - 20)
+        context.stroke()
+        
+        context.beginPath()
+        context.bezierCurveTo( // top
+            centerX - 10, centerY - size[1] / 2 + 10,
+            centerX + 5, centerY - size[1] / 2 + 10,
+            centerX + 10, centerY - size[1] / 2 + 20)
+        context.stroke()
+        
+        context.beginPath()
+        context.bezierCurveTo( // bottom
+            centerX - 10, centerY + size[1] / 2 - 10,
+            centerX + 5, centerY + size[1] / 2 - 10,
+            centerX + 10, centerY + size[1] / 2 - 20)
+        context.stroke()
     }
 }

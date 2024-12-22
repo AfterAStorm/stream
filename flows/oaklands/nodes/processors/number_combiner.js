@@ -6,7 +6,7 @@ export class Node extends BaseNode {
     static id         = "number_combiner"
     static display    = "Number Combiner"
     static size       = [1, 1.5]
-    static icon       = "https://static.wikia.nocookie.net/oaklands/images/6/69/Calculator_boxed.png"
+    static icon       = "$assets/bit_in.png"
     static category   = "processors"
 
     constructor() {
@@ -85,51 +85,50 @@ export class Node extends BaseNode {
         
         const centerX = size[0] / 2
         const centerY = size[1] / 2
-
-        // draw value
-        context.save()
-        context.rect(0, size[1], size[0], 40)
-        context.clip()
-
-        context.beginPath()
-        context.roundRect(20, size[1] - 20, size[0] - 40, 40, 10)
-        context.fill()
         
-        context.fillStyle = '#ddd'
+        // output line
+        context.strokeStyle = this.getLocalConnectionPointValue('#number') > 0 ? this.ON_COLOR : this.OFF_COLOR
         context.beginPath()
-        context.roundRect(21, size[1] - 21, size[0] - 42, 38, 10)
-        context.fill()
-        
-        context.restore()
+        context.moveTo(centerX + 10, centerY)
+        context.lineTo(size[0] - 7, centerY)
+        context.stroke()
 
-        context.fillStyle = '#000'
-        context.textAlign = 'center'
-        context.textBaseline = 'middle'
-        context.font = '20px monospace'
-        var character = '+'
-        switch (this.mode) {
-            case 2:
-                character = '-'
-                break
-            case 3:
-                character = 'x'
-                break
-            case 4:
-                character = '÷'
-                break
-            case 5:
-                character = '^'
-                break
+        // input lines
+        for (let i = 0; i < 5; i++) {
+            const point = this.getConnectionPoint(`#result${i + 1}`)
+            const y = point.staticPosition[1]
+            context.strokeStyle = point.value > 0 ? this.ON_COLOR : this.OFF_COLOR
+            context.beginPath()
+            context.moveTo(7, y)
+            context.lineTo(centerX - 10, y)
+            context.stroke()
         }
 
-        context.fillText(character, centerX, size[1] + 10)
-
-        // draw stuff
-        context.fillStyle = 'black'
-        context.textAlign = 'center'
-        context.textBaseline = 'middle'
-        context.font = 'bold 40px monospace'
-        context.fillText(character, centerX, centerY)
-
+        // symbol
+        context.lineCap = 'round'
+        context.strokeStyle = '#000'
+        context.beginPath()
+        context.moveTo(centerX - 10, centerY - size[1] / 2 + 10) // left
+        context.lineTo(centerX - 10, centerY + size[1] / 2 - 10)
+        context.stroke()
+        
+        context.beginPath()
+        context.moveTo(centerX + 10, centerY - size[1] / 2 + 20) // right
+        context.lineTo(centerX + 10, centerY + size[1] / 2 - 20)
+        context.stroke()
+        
+        context.beginPath()
+        context.bezierCurveTo( // top
+            centerX - 10, centerY - size[1] / 2 + 10,
+            centerX + 5, centerY - size[1] / 2 + 10,
+            centerX + 10, centerY - size[1] / 2 + 20)
+        context.stroke()
+        
+        context.beginPath()
+        context.bezierCurveTo( // bottom
+            centerX - 10, centerY + size[1] / 2 - 10,
+            centerX + 5, centerY + size[1] / 2 - 10,
+            centerX + 10, centerY + size[1] / 2 - 20)
+        context.stroke()
     }
 }

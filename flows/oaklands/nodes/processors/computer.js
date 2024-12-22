@@ -58,9 +58,10 @@ export class Node extends BaseNode {
         // output
         const currentOutput = this.getLocalConnectionPointValue('#result')
         var setOutput = this._math(this.getConnectionPointValue('#left'), this.getConnectionPointValue('#right'))
+        if (Number.isNaN(setOutput))
+            setOutput = 0
         
         if (setOutput != currentOutput) {
-            console.log(setOutput)
             this.setConnectionPointValue('#result', setOutput)
         }
 

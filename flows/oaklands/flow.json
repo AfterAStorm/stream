@@ -9,6 +9,9 @@
     ],
 
     "nodes": [
+        "binary/bitout",
+        "binary/bitin",
+
         "input/switch",
         "input/button",
         "input/number_interface",

@@ -7,6 +7,8 @@ import JSONCrush from "./vendor/JSONCrush.min.js"
 // canvas
 var canvas, context
 
+var interactionMode = false
+
 var scale = 1
 var pan = [0, 0]
 var lastPointerPos = [0, 0]
@@ -277,6 +279,9 @@ async function main() {
         pointerSecondaryPressed =
             (e.pointerType == 'mouse' && (e.buttons & 2) != 0) ||
             (e.pointerType != 'mouse' && (e.buttons & 1) != 0)
+            
+        if (interactionMode)
+            return
         
         if (pointerPrimaryPressed) {
             const connections = flow.getConnectionsAt(...lastPointerPos)
@@ -431,6 +436,9 @@ async function main() {
             // handle pinch gestures
             return
         }
+
+        if (interactionMode)
+            return
 
         if (selectedNodesDragging) {
             selectedNodes.forEach(n => {
@@ -699,6 +707,7 @@ async function main() {
                 const decompressed = decompress(decodeURIComponent(data))
                 flow.deserialize(decompressed)
             })
+            fileInput.value = null
         }
     })
 
@@ -714,6 +723,10 @@ async function main() {
             link.remove()
             URL.revokeObjectURL(url)
         })
+    })
+
+    document.querySelector('#interaction-mode').addEventListener('change', () => {
+        interactionMode = document.querySelector('#interaction-mode').checked
     })
 
     requestAnimationFrame(draw)
