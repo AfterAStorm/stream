@@ -49,7 +49,18 @@ export class Node extends BaseNode {
         this.height = 5
     }
 
-    
+    serialize() {
+        const data = super.serialize()
+        data['width'] = this.width
+        data['height'] = this.height
+        return data
+    }
+
+    deserialize(data) {
+        super.deserialize(data)
+        this.width = data.width || 5
+        this.height = data.height || 5
+    }
 
     update() {
         super.update()
@@ -152,21 +163,29 @@ export class Node extends BaseNode {
         const value = this.getConnectionPointValue('#color0')
 
         // draw width/height box
-        context.fillStyle = '#fff'
-        context.beginPath()
-        context.roundRect(0, -20, 80, 40, 10)
-        context.fill()
-        
-        context.fillStyle = '#ddd'
-        context.beginPath()
-        context.roundRect(1, -19, 78, 40, 10)
-        context.fill()
+        context.save()
 
-        context.fillStyle = '#000'
-        context.textAlign = 'center'
-        context.textBaseline = 'middle'
-        context.font = '15px monospace'
-        context.fillText(`${this.width}x${this.height}`, 40, -10)
+            context.beginPath() // only clip it to make the transparent version not look weird
+            context.rect(0, -20, size[0], 20)
+            context.clip()
+
+            context.fillStyle = '#fff'
+            context.beginPath()
+            context.roundRect(0, -20, 80, 40, 10)
+            context.fill()
+            
+            context.fillStyle = '#ddd'
+            context.beginPath()
+            context.roundRect(1, -19, 78, 40, 10)
+            context.fill()
+
+            context.fillStyle = '#000'
+            context.textAlign = 'center'
+            context.textBaseline = 'middle'
+            context.font = '15px monospace'
+            context.fillText(`${this.width}x${this.height}`, 40, -10)
+
+        context.restore()
 
         // draw background
         context.fillStyle = '#000'

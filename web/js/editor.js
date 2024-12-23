@@ -11,9 +11,12 @@ var canvas, context
 
 var interactionMode = false
 
+const gridSize = 25
+
 var scale = 1
 var pan = [0, 0]
 var lastPointerPos = [0, 0]
+var dragStartPos = [0, 0]
 var selectStart = null//[0, 0]
 var pointerPrimaryPressed = false
 var pointerSecondaryPressed = false
@@ -178,8 +181,6 @@ async function draw() {
     // draw grid
     context.strokeStyle = '#ddd'
     context.globalAlpha = .35
-
-    const gridSize = 25
 
     context.scale(scale, scale)
     // this is incredibly elegant and i love it
@@ -352,6 +353,7 @@ async function main() {
                     if (selectedNodes.some(n => nodes.includes(n))) {
                         // drag
                         selectedNodesDragging = true
+                        dragStartPos = [...lastPointerPos]
                         pointerPrimaryPressed = false
                     }
                     else {
@@ -370,6 +372,7 @@ async function main() {
                                 selectedNodes = null
                             else {
                                 selectedNodesDragging = true
+                                dragStartPos = [...lastPointerPos]
                                 pointerPrimaryPressed = false
                                 selectedNodes.forEach(n => n.ghost = true)
                             }
@@ -380,6 +383,7 @@ async function main() {
                     selectedNodes = nodes
                     selectedNodes.forEach(n => n.ghost = true)
                     selectedNodesDragging = true
+                    dragStartPos = [...lastPointerPos]
                     if (selectedNodes.length > 0)
                         pointerPrimaryPressed = false
                 }
@@ -445,9 +449,15 @@ async function main() {
             return
 
         if (selectedNodesDragging) {
-            selectedNodes.forEach(n => {
+            selectedNodes.forEach(n => { // this doesn't really work how i'd want it to, but the i'd have to store the starting position of all the nodes
+                                         // so... whatever for now
                 n.position[0] += offsetX * (1 / scale)
                 n.position[1] += offsetY * (1 / scale)
+
+                if (heldKeys.includes('shift')) {
+                    n.position[0] = Math.round(n.position[0] / gridSize) * gridSize
+                    n.position[1] = Math.round(n.position[1] / gridSize) * gridSize
+                }
             })
             const eligableDraggingConnections = selectedNodes
                 .flatMap(n => flow.getConnectionsTo(n))
