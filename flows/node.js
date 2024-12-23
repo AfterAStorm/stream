@@ -27,6 +27,7 @@ class ConnectionPoint {
     id
     tooltip
     value
+    active
 
     position // point after rotation relative to 0, 0 of node's position
     staticPosition // point before rotation
@@ -102,7 +103,8 @@ export class BaseNode {
      */
     addConnectionPoint(type, side, id, tooltip) {
         return this.connectionPoints.push(new ConnectionPoint({
-            node: this, type, side, id, tooltip, value: 0 // should technically be null... but... whatever
+            node: this, type, side, id, tooltip, value: 0, // should technically be null... but... whatever
+            active: true // only false when they are "added" or "removed"
         }))
     }
 
@@ -126,7 +128,8 @@ export class BaseNode {
         const point = this.connectionPoints[indexOrId]
         // get all connections
         const value = this.editor != null ? this.editor.flow.connections.filter(c => c.has(point)).reduce((p, v) => p + v.value, 0) : 0
-        point.value = value
+        if (point != null)
+            point.value = value
 
         return value//point.value
     }
@@ -162,7 +165,7 @@ export class BaseNode {
         return point
     }
 
-    _getConnectionPointPositions() {
+    getConnectionPointPositions() {
         // calculate totals
         const totals = {}
         const indexes = {}
@@ -340,6 +343,30 @@ export class BaseNode {
         })
     }
 
+    drawPoints(context) {
+        const size = this.getSize()
+        // unrotate
+        context.translate(size[0] / 2, size[1] / 2)
+        context.rotate(-this.rotation * (Math.PI / 180))
+        context.translate(-size[0] / 2, -size[1] / 2)
+
+        // draw points
+        context.fillStyle = '#ddd'
+        context.strokeStyle = '#555'
+        context.lineWidth = 2
+        for (const point of this.getConnectionPointPositions()) {
+            context.beginPath()
+            context.arc(...point.position, 7, 0, Math.PI * 2)
+            context.fill()
+            context.stroke()
+        }
+        
+        // re-rotate for sub drawings
+        context.translate(size[0] / 2, size[1] / 2)
+        context.rotate(this.rotation * (Math.PI / 180))
+        context.translate(-size[0] / 2, -size[1] / 2)
+    }
+
     /**
      * Draw the node
      * @param {CanvasRenderingContext2D} context 
@@ -378,26 +405,9 @@ export class BaseNode {
 
 
         // draw connection points
-        // unrotate
-        context.translate(size[0] / 2, size[1] / 2)
-        context.rotate(-this.rotation * (Math.PI / 180))
-        context.translate(-size[0] / 2, -size[1] / 2)
-
-        context.fillStyle = '#ddd'
-        context.strokeStyle = '#555'
-        context.lineWidth = 2
-        for (const point of this._getConnectionPointPositions()) {
-            context.beginPath()
-            context.arc(...point.position, 7, 0, Math.PI * 2)
-            context.fill()
-            context.stroke()
-        }
+        this.drawPoints(context)
         
         context.fillStyle = '#fff'
         
-        // re-rotate for sub drawings
-        context.translate(size[0] / 2, size[1] / 2)
-        context.rotate(this.rotation * (Math.PI / 180))
-        context.translate(-size[0] / 2, -size[1] / 2)
     }
 }

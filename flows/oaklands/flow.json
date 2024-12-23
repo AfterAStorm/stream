@@ -19,6 +19,7 @@
         "input/frequency",
 
         "visual/lcd",
+        "visual/lcd_array",
         "visual/7segment",
         "visual/14segment",
 

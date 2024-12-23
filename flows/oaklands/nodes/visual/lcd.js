@@ -34,9 +34,6 @@ export class Node extends BaseNode {
     constructor() {
         super()
         this.addConnectionPoint('input', 'left', '#color', 'Light Color')
-
-        this.pressed = false
-        this.cooldown = false
     }
 
     /**

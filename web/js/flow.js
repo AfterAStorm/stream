@@ -33,7 +33,7 @@ export class Flow {
     }
 
     getConnectionPointsAt(x, y) {
-        return this.nodes.reduce((prev, curr) => {prev.push(...curr.connectionPoints); return prev}, []).filter(p => p.isHovering(x, y))
+        return this.nodes.reduce((prev, curr) => {prev.push(...curr.connectionPoints); return prev}, []).filter(p => p.active && p.isHovering(x, y))
     }
 
     getConnectionsTo(node) {
