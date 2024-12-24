@@ -14,9 +14,11 @@ function distV2(a) {
 
 export class Connection {
     static id = 'wire'
+    static display = "Wire"
     
     constructor(connectionA, connectionB) {
         this.id = this.constructor.id
+        this.display = this.constructor.display
         this.a = connectionA
         this.b = connectionB
         this.value = 0

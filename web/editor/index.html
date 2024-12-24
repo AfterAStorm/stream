@@ -95,6 +95,17 @@
                 <button onfocusout="this.parentElement.parentElement.returnValue = '#close'; this.parentElement.submit()" value="#close">Nevermind</button>
             </form>
         </dialog>
+        <dialog id="summary-notice">
+            <form method="dialog">
+                <h1>summary</h1>
+                <h3>Nodes</h3>
+                <p id="summary-nodes">x1 cheese<br />x3 spaghetti</p>
+                <h3>Connections</h3>
+                <p id="summary-connections">x1 cheese<br />x3 spaghetti</p>
+                <br />
+                <button>Alrighty</button>
+            </form>
+        </dialog>
         <dialog id="saving-notice">
             <form method="dialog">
                 <h1>saving...</h1>
@@ -117,6 +128,9 @@
                 </button>
                 <button id="examples" class="button">
                     <span class="icon material-symbols-outlined">topic</span>
+                </button>
+                <button id="summary" class="button">
+                    <span class="icon material-symbols-outlined">summarize</span>
                 </button>
                 <button id="help" class="button">
                     <span class="icon material-symbols-outlined">help</span>

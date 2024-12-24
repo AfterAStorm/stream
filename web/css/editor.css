@@ -173,6 +173,10 @@ dialog {
     display: flex;
 }
 
+#summary-notice {
+    min-width: 20%;
+}
+
 #readonly-warning {
     display: none;
     width: 80%;

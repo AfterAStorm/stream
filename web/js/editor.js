@@ -746,6 +746,24 @@ async function main() {
         interactionMode = document.querySelector('#interaction-mode').checked
     })
 
+    const summaryDialog = document.querySelector('#summary-notice')
+    const summaryNodes = document.querySelector('#summary-nodes')
+    const summaryConnections = document.querySelector('#summary-connections')
+
+    document.querySelector('#summary').addEventListener('click', () => {
+        summaryNodes.innerHTML = Object.entries(flow.nodes.map(n => n.display).reduce((prev, cur) => {
+            prev[cur] = prev[cur] ?? 0
+            prev[cur] += 1
+            return prev
+        }, {})).sort((a, b) => b[1] - a[1]).map((v, i) => `x${v[1]} ${v[0]}`).join('<br />')
+        summaryConnections.innerHTML = Object.entries(flow.connections.map(n => n.display).reduce((prev, cur) => {
+            prev[cur] = prev[cur] ?? 0
+            prev[cur] += 1
+            return prev
+        }, {})).sort((a, b) => b[1] - a[1]).map((v, i) => `x${v[1]} ${v[0]}`).join('<br />')
+        summaryDialog.showModal()
+    })
+
     requestAnimationFrame(draw)
 }
 
