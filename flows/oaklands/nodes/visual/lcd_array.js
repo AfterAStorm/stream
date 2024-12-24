@@ -42,6 +42,8 @@ export class Node extends BaseNode {
             this.addConnectionPoint('input', 'left', `#color${i}`, `Light Color ${i}`)
         }
 
+        this.size = [2, 2]
+
         this.pressed = false
         this.cooldown = false
 
@@ -53,6 +55,8 @@ export class Node extends BaseNode {
         const data = super.serialize()
         data['width'] = this.width
         data['height'] = this.height
+        data['sizew'] = this.size[0]
+        data['sizeh'] = this.size[1]
         return data
     }
 
@@ -60,6 +64,8 @@ export class Node extends BaseNode {
         super.deserialize(data)
         this.width = data.width || 5
         this.height = data.height || 5
+        this.size[0] = data.sizew || 2
+        this.size[1] = data.sizeh || 2
     }
 
     update() {
@@ -79,7 +85,28 @@ export class Node extends BaseNode {
         const size = this.getSize()
         const pos = this.getRelativePointer()
         
-        if (this.isHoveringRectangle(pos, 0, -20, 80, 20)) {
+        if (this.isHoveringRectangle(pos, size[0] - 80, -20, 80, 20)) { // SIZE
+            this.cooldown = true
+            this.getUserTextInput(`${this.size[0]}x${this.size[1]}`).then(v => {
+                const split = v.split('x')
+                if (split.length != 2) {
+                    // assume it's just 1 number to set both
+                    var number = parseInt(v)
+                    if (Number.isNaN(this.number))
+                        number = 1
+                    this.size = [number, number]
+                }
+                else {
+                    this.size[0] = parseInt(split[0])
+                    this.size[1] = parseInt(split[1])
+                    if (Number.isNaN(this.size[0]))
+                        this.size[0] = 2
+                    if (Number.isNaN(this.size[1]))
+                        this.size[1] = 2
+                }
+            })
+        }
+        else if (this.isHoveringRectangle(pos, 0, -20, 80, 20)) { // WIDTH/HEIGHT
             this.cooldown = true
             this.getUserTextInput(`${this.width}x${this.height}`).then(v => {
                 const split = v.split('x')
@@ -99,9 +126,10 @@ export class Node extends BaseNode {
                     if (Number.isNaN(this.height))
                         this.height = 5
                 }
-                this.number = parseInt(v)
-                if (Number.isNaN(this.number))
-                    this.number = 10
+                const neededPoints = this.width * this.height
+                if (this.connectionPoints.length < neededPoints)
+                    for (let i = this.connectionPoints.length; i < neededPoints; i++)
+                        this.addConnectionPoint('input', 'left', `#color${i}`, `Light Color ${i}`)
             })
         }
     }
@@ -125,6 +153,8 @@ export class Node extends BaseNode {
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
                 const point = this.getConnectionPoint(`#color${x + y * this.width}`)
+                if (!point)
+                    continue
                 point.active = true
                 point.tooltip = `Pixel ${x + 1}, ${y + 1}`
                 const yPos = offset + size[1] + (size[1] - offset * 2) * (y / (this.height - 1))
@@ -160,8 +190,6 @@ export class Node extends BaseNode {
 
         const size = this.getSize()
 
-        const value = this.getConnectionPointValue('#color0')
-
         // draw width/height box
         context.save()
 
@@ -184,6 +212,31 @@ export class Node extends BaseNode {
             context.textBaseline = 'middle'
             context.font = '15px monospace'
             context.fillText(`${this.width}x${this.height}`, 40, -10)
+
+        context.restore()
+        
+        // draw size box
+        context.save()
+
+            context.beginPath() // only clip it to make the transparent version not look weird
+            context.rect(0, -20, size[0], 20)
+            context.clip()
+
+            context.fillStyle = '#fff'
+            context.beginPath()
+            context.roundRect(size[0] - 80, -20, 80, 40, 10)
+            context.fill()
+            
+            context.fillStyle = '#ddd'
+            context.beginPath()
+            context.roundRect(size[0] - 79, -19, 78, 40, 10)
+            context.fill()
+
+            context.fillStyle = '#000'
+            context.textAlign = 'center'
+            context.textBaseline = 'middle'
+            context.font = '15px monospace'
+            context.fillText(`${this.size[0]}x${this.size[1]}`, size[0] - 40, -10)
 
         context.restore()
 
