@@ -37,7 +37,7 @@ export class Node extends BaseNode {
         if (this.value != input) {
             const last = this.value
             this.value = input
-            if (last == 0) // the same as delay, except if its 0 it will pick it up immediatelly
+            if (last == 0 && this.scheduledTasks.length == 0) // the same as delay, except if its 0 it will pick it up immediatelly
                 this.setConnectionPointValue('#result', input)
             else
                 this.schedule(() => {

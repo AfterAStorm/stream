@@ -93,6 +93,10 @@ export class BaseNode {
 
     /* CONNECTIONS */
 
+    getPriority() {
+        return (this.connectionPoints.some(p => p.type == 'output') && !this.connectionPoints.every(p => p.type != 'input')) ? 2 : 0
+    }
+
     /**
      * 
      * @param {string} type 

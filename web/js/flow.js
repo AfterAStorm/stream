@@ -97,7 +97,8 @@ export class Flow {
         })
     }
 
-    _updateNode(node) {
+    _updateNode(node, depth=0) {
+        const flow = this
         if (node.needsUpdate) {
             node.needsUpdate = false
             node.update()
@@ -106,11 +107,11 @@ export class Flow {
         if (node.needsConnectionUpdate) {
             //console.log(node, 'needsConnectionUpdate')
             node.needsConnectionUpdate = false
-            const connections = this.connections.filter(c => node.connectionPoints.find(p => c.has(p)))
+            const connections = flow.connections.filter(c => node.connectionPoints.find(p => c.has(p)))
             connections.forEach(c => {
                 c.update()
                 c.points.forEach(p => {
-                    this._updateNode(p.node)
+                    this._updateNode(p.node, depth + 1)
                 })
             })
             /*connections.forEach(c => {
@@ -142,6 +143,7 @@ export class Flow {
             c.editor = editor
             c.needsUpdate = true
         })
+        this.nodes.sort((a, b) => a.getPriority() - b.getPriority())
         this.nodes.forEach(n => {
             n.needsUpdate = true
             n.editor = editor

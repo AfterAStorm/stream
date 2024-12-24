@@ -44,7 +44,8 @@ export class Node extends BaseNode {
         }
         if (right != this.lastRight) {
             this.lastRight = right
-            this.count = 0
+            if (right > 0)
+                this.count = 0
         }
         
         var setOutput = this.count
