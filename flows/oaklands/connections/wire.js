@@ -54,7 +54,7 @@ export class Connection {
     }
 
     has(connectionPoint) {
-        return this.points.find(p => p.node == connectionPoint.node && p.id == connectionPoint.id) != null
+        return this.points.some(p => p.node == connectionPoint.node && p.id == connectionPoint.id)
     }
 
     getRelative(x, y, tx, ty) {

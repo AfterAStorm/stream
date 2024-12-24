@@ -70,7 +70,7 @@ export class Node extends BaseNode {
         context.stroke()
 
         // left line
-        context.strokeStyle = this.getConnectionPointValue('#left') > 0 ? this.ON_COLOR : this.OFF_COLOR
+        context.strokeStyle = this.getLocalConnectionPointValue('#left') > 0 ? this.ON_COLOR : this.OFF_COLOR
         context.beginPath()
         var y = this.connectionPoints[0].staticPosition[1]
         context.moveTo(7, y)

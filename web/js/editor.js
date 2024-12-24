@@ -153,7 +153,8 @@ async function draw() {
         'pointerPosition': lastPointerPos,
         'pointerPrimaryPressed': pointerPrimaryPressed,
         'offset': pan,
-        'scale': scale
+        'scale': scale,
+        'debug': context.editor?.debug || false
     }
 
     // attempt to update
@@ -161,7 +162,7 @@ async function draw() {
         ghostConnection.ghost = true
 
     const now = Date.now()
-    if (now - lastUpdate > millisecondsPerUpdate) {
+    if (now - lastUpdate > millisecondsPerUpdate && !context.editor.debug) {
         const difference = now - lastUpdate - millisecondsPerUpdate
         lastUpdate = now - difference
         flow.update(context.editor)
@@ -545,6 +546,8 @@ async function main() {
         const key = e.key.toLowerCase()
         if (!e.repeat && !heldKeys.includes(key)) {
             heldKeys.push(key)
+            if (key == 'q' && e.ctrlKey)
+                context.editor.debug = !context.editor.debug
         }
         if (key == 'q')
             flow.update(context.editor)
@@ -723,6 +726,7 @@ async function main() {
             fileInput.files[0].text().then(data => {
                 const decompressed = decompress(decodeURIComponent(data))
                 flow.deserialize(decompressed)
+                flow.update(context.editor)
             })
             fileInput.value = null
         }

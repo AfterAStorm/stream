@@ -44,7 +44,7 @@ export class Node extends BaseNode {
         const radius = Math.min(centerX, centerY) / 2 / 1
 
         // TETHER symbol
-        context.strokeStyle = this.getConnectionPointValue('#passthrough') > 0 ? this.ON_COLOR : this.OFF_COLOR
+        context.strokeStyle = this.getLocalConnectionPointValue('#passthrough') > 0 ? this.ON_COLOR : this.OFF_COLOR
         context.beginPath()
         context.moveTo(7, centerY)
         context.lineTo(centerX - radius, centerY)

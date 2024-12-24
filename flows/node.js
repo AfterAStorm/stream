@@ -73,6 +73,10 @@ export class BaseNode {
         this.editor = null // set before update
         this.ghost = false // is the node a ghost? (preview)
         this.index = -1 // set before serialize
+        this.debug = {
+            depth: 0,
+            updated: false
+        }
     }
 
     /* SAVING */
@@ -315,7 +319,7 @@ export class BaseNode {
      * @param {CanvasRenderingContext2D} context 
      */
     getRelativePointer() {
-        return this.getRelative(...this.editor.pointerPosition)
+        return this.editor != null ? this.getRelative(...this.editor.pointerPosition) : [-99, -99]
     }
 
     isPointerPressed() {
@@ -389,7 +393,12 @@ export class BaseNode {
         const size = this.getSize()
 
         // draw node itself
-        context.fillStyle = '#fff'
+        if (this.editor != null && this.editor.debug) {
+            const depth = this.debug.depth * 3
+            context.fillStyle = `rgb(${this.debug.updated ? 25 : 0},${Math.min(depth, 255)},${depth > 255 ? Math.min((depth - 255) / 5, 255) : 0})`
+        }
+        else
+            context.fillStyle = '#fff'
         context.translate(this.position[0], this.position[1])
 
         // rotate

@@ -99,9 +99,18 @@ export class Flow {
 
     _updateNode(node, depth=0) {
         const flow = this
-        if (node.needsUpdate) {
-            node.needsUpdate = false
+        if (depth > 0) {
+            if (node.hasUpdated)
+                return
+            node.hasUpdated = true
+            node.needsSoftUpdate = false
             node.update()
+            node.debug.depth = depth * 2
+        }
+        if (node.needsSoftUpdate) {
+            node.needsSoftUpdate = false
+            node.update()
+            node.debug.updated = true
         }
         
         if (node.needsConnectionUpdate) {
@@ -141,12 +150,14 @@ export class Flow {
         editor.flow = this
         this.connections.forEach(c => {
             c.editor = editor
-            c.needsUpdate = true
         })
-        this.nodes.sort((a, b) => a.getPriority() - b.getPriority())
+        this.nodes.sort((a, b) => b.getPriority() - a.getPriority())
         this.nodes.forEach(n => {
-            n.needsUpdate = true
+            n.needsSoftUpdate = true
+            n.hasUpdated = false
             n.editor = editor
+            n.debug.depth = 0
+            n.debug.updated = false
         })
         this.nodes.forEach(n => {
             this._updateNode(n)

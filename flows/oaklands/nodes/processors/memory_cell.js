@@ -21,6 +21,17 @@ export class Node extends BaseNode {
         this.lastRight = 0
     }
 
+    serialize() {
+        const data = super.serialize()
+        data['value'] = this.value
+        return data
+    }
+
+    deserialize(data) {
+        super.deserialize(data)
+        this.value = data.value || 0
+    }
+
     update() {
         super.update()
 

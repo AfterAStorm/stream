@@ -31,7 +31,7 @@ export class Node extends BaseNode {
         context.textAlign = 'center'
         context.textBaseline = 'middle'
         context.fillStyle = '#000'
-        const comment = this.getConnectionPointValue('#in')
+        const comment = this.getConnectionPointValue('#in') // this isn't getLocalConnectionPointValue because we never fetch it elsewhere, so it isn't "cached"
         context.fillText(comment, centerX, centerY)
     }
 }
