@@ -94,7 +94,14 @@ export class BaseNode {
     /* CONNECTIONS */
 
     getPriority() {
-        return (this.connectionPoints.some(p => p.type == 'output') && !this.connectionPoints.every(p => p.type != 'input')) ? 2 : 0
+        const hasAnyOutput = this.connectionPoints.some(p => p.type == 'output')
+        const hasAnyInput = this.connectionPoints.some(p => p.type == 'input')
+
+        // buttons/etc first
+        // intermediate components
+        // lcds/etc last
+
+        return (hasAnyOutput && !hasAnyInput ? 2 : (!hasAnyOutput && hasAnyInput ? 0 : 1))
     }
 
     /**
