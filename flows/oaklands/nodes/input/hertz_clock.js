@@ -48,7 +48,7 @@ export class Node extends BaseNode {
            this.averageSecondsBetweenClock -= this.averageSecondsBetweenClock / 50
            this.averageSecondsBetweenClock += (now - this.lastClock) / 50
            this.lastClock = now
-        }, 1 / (this.hertz))
+        }, 1 / (this.hertz) + this.editor.flow.updateSpeed * 2)
     }
 
     update() {

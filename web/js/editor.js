@@ -181,7 +181,7 @@ async function draw(timestamp) {
     delta += timestamp - lastTimestamp
     lastTimestamp = timestamp
 
-    while (delta >= millisecondsPerUpdate) {
+    while (delta >= millisecondsPerUpdate && !(context.editor.debug && context.editor.pause)) {
         delta -= millisecondsPerUpdate
         flow.update(context.editor)
     }

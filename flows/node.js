@@ -330,7 +330,7 @@ export class BaseNode {
 
     schedule(callback, seconds) {
         //console.log(seconds, 'is', this.getTicks(seconds))
-        this.scheduledTasks.push([this.getTicks(seconds + this.editor.flow.updateSpeed * 2), callback])
+        this.scheduledTasks.push([this.getTicks(seconds), callback])
     }
 
     getTicks(seconds) {
