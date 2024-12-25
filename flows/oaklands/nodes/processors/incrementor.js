@@ -30,6 +30,7 @@ export class Node extends BaseNode {
     deserialize(data) {
         super.deserialize(data)
         this.count = data.count
+        this.setConnectionPointValue('#result', this.count)
     }
 
     update() {

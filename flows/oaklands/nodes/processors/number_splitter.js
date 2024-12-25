@@ -28,7 +28,7 @@ export class Node extends BaseNode {
         super.update()
 
         // output
-        const num = this.getConnectionPointValue('#number')
+        const num = Math.floor(this.getConnectionPointValue('#number'))
         if (this.last != num) {
             const numStr = num.toString()
             this.last = num

@@ -329,11 +329,12 @@ export class BaseNode {
     /* TIMING */
 
     schedule(callback, seconds) {
-        this.scheduledTasks.push([this.getTicks(seconds), callback])
+        //console.log(seconds, 'is', this.getTicks(seconds))
+        this.scheduledTasks.push([this.getTicks(seconds + this.editor.flow.updateSpeed * 2), callback])
     }
 
     getTicks(seconds) {
-        return seconds * (1 / (this.editor?.flow?.updateSpeed || 60))
+        return Math.floor(seconds * (1 / (this.editor?.flow?.updateSpeed || (1/60))))
     }
 
     /* METHODS */

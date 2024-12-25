@@ -15,6 +15,10 @@ export class Node extends BaseNode {
         this.setConnectionPointValue('#result', 0)
 
         this.hertz = 1
+        this.scheduled = false
+        //this.dates = []
+        this.lastClock = performance.now()
+        this.averageSecondsBetweenClock = 0
     }
 
     serialize() {
@@ -28,15 +32,39 @@ export class Node extends BaseNode {
         this.hertz = data.hertz
     }
 
+    _schedule() {
+        this.schedule(() => {
+            this.setConnectionPointValue('#result', this.getLocalConnectionPointValue('#result') > 0 ? 0 : 10)
+            this._schedule()
+            //this.dates.push(performance.now())
+            /*if (this.dates.length >= 2) {
+                const distances = []
+                for (let i = 1; i < this.dates.length; i++) {
+                    distances.push(this.dates[i] - this.dates[i - 1])
+                }
+                console.warn('average hit', distances.reduce((prev, cur, i) => prev + cur, 0) / distances.length, distances.reduce((prev, cur, i) => prev * (i) / (i + 1) + cur / (i + 1), 0))
+            }*/
+           const now = performance.now()
+           this.averageSecondsBetweenClock -= this.averageSecondsBetweenClock / 50
+           this.averageSecondsBetweenClock += (now - this.lastClock) / 50
+           this.lastClock = now
+        }, 1 / (this.hertz))
+    }
+
     update() {
         super.update()
 
         // output
-        const currentOutput = this.getConnectionPointValue('#result')
+        /*const currentOutput = this.getConnectionPointValue('#result')
         var setOutput = (Date.now() / 1000) * this.hertz % 2 > 1 ? 10 : 0
         
         if (setOutput != currentOutput) {
             this.setConnectionPointValue('#result', setOutput)
+        }*/
+
+        if (!this.scheduled) {
+            this._schedule()
+            this.scheduled = true
         }
 
         // changing value
@@ -58,6 +86,7 @@ export class Node extends BaseNode {
                 this.hertz = parseInt(v)
                 if (Number.isNaN(this.hertz))
                     this.hertz = 1
+                this.averageSecondsBetweenClock = 1 / this.hertz * 1000
             })
         }
     }
@@ -101,6 +130,12 @@ export class Node extends BaseNode {
         context.textBaseline = 'middle'
         context.font = 'bold 20px monospace'
         context.fillText('123hz', centerX, centerY)
+        
+        context.font = '10px monospace'
+        context.fillStyle = '#ddd'
+        context.textAlign = 'right'
+        context.textBaseline = 'bottom'
+        context.fillText(this.averageSecondsBetweenClock.toFixed(2) + 'ms between ticks', size[0] - 5, size[1] - 5)
 
     }
 }

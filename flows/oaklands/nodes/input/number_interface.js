@@ -57,7 +57,7 @@ export class Node extends BaseNode {
         if (this.isHoveringRectangle(pos, 20, size[1], size[0] - 40, 20)) {
             this.cooldown = true
             this.getUserTextInput(this.number).then(v => {
-                this.number = parseInt(v)
+                this.number = parseFloat(v)
                 if (Number.isNaN(this.number))
                     this.number = 10
             })

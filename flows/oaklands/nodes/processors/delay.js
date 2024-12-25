@@ -37,6 +37,7 @@ export class Node extends BaseNode {
         const input = this.getConnectionPointValue('#in')
         if (this.value != input) {
             this.value = input
+            console.log('schedule', input, 'after', this.delay, 'seconds')
             this.schedule(() => {
                 this.setConnectionPointValue('#result', input)
             }, this.delay)

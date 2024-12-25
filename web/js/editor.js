@@ -22,8 +22,10 @@ var pointerPrimaryPressed = false
 var pointerSecondaryPressed = false
 var heldKeys = []
 
-var lastUpdate = Date.now()
-var millisecondsPerUpdate = 0
+var lastUpdate = performance.now()
+var lastDraw = Date.now()
+const framerateCap = 1 / 60
+var millisecondsPerUpdate = 9999
 
 var selectedNodes = null
 var selectedNodesDragging = false
@@ -68,6 +70,7 @@ if (flow == null)
     flow = new Flow('oaklands')
 flow.load().then(() => {
     millisecondsPerUpdate = 1000 * flow.updateSpeed
+    console.warn('millisecondsPerUpdate', millisecondsPerUpdate)
 
     /*const btn = new flow.nodeDefinitions.number_interface()
     const btn2 = new flow.nodeDefinitions.button()
@@ -147,26 +150,63 @@ String.prototype.strip = function(char) {
     return str
 }
 
-async function draw() {
+var delta = 0
+var lastTimestamp = 0
+
+const connectionColor = document.querySelector('#connection-color')
+
+async function draw(timestamp) {
     // used in some nodes
     context.editor = {
         'pointerPosition': lastPointerPos,
         'pointerPrimaryPressed': pointerPrimaryPressed,
+        'color': connectionColor.value,
         'offset': pan,
         'scale': scale,
-        'debug': context.editor?.debug || false
+        'debug': context.editor?.debug || false,
+        'pause': true,
+        'tick': context.editor?.tick || 0
     }
 
     // attempt to update
     if (ghostConnection != null)
         ghostConnection.ghost = true
 
-    const now = Date.now()
-    if (now - lastUpdate > millisecondsPerUpdate && !context.editor.debug) {
-        const difference = now - lastUpdate - millisecondsPerUpdate
-        lastUpdate = now - difference
+    // start : 0
+    // now : 16.6
+    // now - start = 16.6
+    // 16.6 > 1000 / 60 yes
+    // difference = 16.6 - 1000 / 60 // time missed
+
+    delta += timestamp - lastTimestamp
+    lastTimestamp = timestamp
+
+    while (delta >= millisecondsPerUpdate) {
+        delta -= millisecondsPerUpdate
         flow.update(context.editor)
     }
+    const now = Date.now()
+    /*var updates = 0
+    while (now - lastUpdate > millisecondsPerUpdate && !(context.editor.debug && context.editor.pause)) {
+        const difference = now - lastUpdate - millisecondsPerUpdate
+        lastUpdate += millisecondsPerUpdate
+        flow.update(context.editor)
+        context.editor.tick += 1
+        updates += 1
+        if (updates > 9) {
+            lastUpdate = now
+            console.warn('WOAH')
+            break
+        }
+    }*/
+
+    // check timing
+    requestAnimationFrame(draw)
+    if ((now - lastDraw) / 1000 > framerateCap) {
+        lastDraw = now
+    }
+    else
+        return
 
     // correct sizes
     canvas.width = canvas.clientWidth
@@ -177,7 +217,9 @@ async function draw() {
 
     // clear
     context.resetTransform()
-    context.clearRect(0, 0, canvas.width, canvas.height)
+    //context.clearRect(0, 0, canvas.width, canvas.height)
+    context.fillStyle = '#777196'
+    context.fillRect(0, 0, context.width, context.height)
 
     // draw grid
     context.strokeStyle = '#ddd'
@@ -262,15 +304,12 @@ async function draw() {
         context.rect(selectStart[0], selectStart[1], lastPointerPos[0] - selectStart[0], lastPointerPos[1] - selectStart[1])
         context.stroke()
     }
-
-
-    requestAnimationFrame(draw)
 }
 
 async function main() {
     canvas = document.getElementById('chart')
     context = canvas.getContext('2d', {
-        alpha: true
+        alpha: false
     })
     
     canvas.oncontextmenu = e => e.preventDefault()
@@ -327,7 +366,7 @@ async function main() {
                         if (heldKeys.includes('shift')) {
                             const lastConnection = ghostConnection
                             ghostConnection = new ghostConnection.constructor(selectedConnectionPoint)
-                            ghostConnection.color = document.querySelector('#connection-color').value
+                            ghostConnection.color = connectionColor.value
                             ghostConnection.a = lastConnection.a
                             lastConnection.visualPoints.forEach(p => ghostConnection.visualPoints.push(p))
                             flow.connections.push(ghostConnection)
@@ -341,7 +380,7 @@ async function main() {
                 else {
                     selectedConnectionPoint = points[0]
                     ghostConnection = new flow.connectionDefinitions[flow.connectionPointTypes[selectedConnectionPoint.type].connection](selectedConnectionPoint, null)
-                    ghostConnection.color = document.querySelector('#connection-color').value
+                    ghostConnection.color = connectionColor.value
                     flow.connections.push(ghostConnection)
                 }
             }
@@ -566,7 +605,7 @@ async function main() {
                 // create a wire
                 selectedConnectionPoint = connection.points[0]
                 ghostConnection = new flow.connectionDefinitions[flow.connectionPointTypes[connection.points[0].type].connection](selectedConnectionPoint, null)
-                ghostConnection.color = document.querySelector('#connection-color').value
+                ghostConnection.color = connectionColor.value
                 for (let i = 0; i < subpointIndex + 1; i++) {
                     ghostConnection.visualPoints.push(connection.visualPoints[i])
                 }
