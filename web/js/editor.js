@@ -155,6 +155,9 @@ var lastTimestamp = 0
 
 const connectionColor = document.querySelector('#connection-color')
 
+var drawTime = 0
+var updateTime = 0
+
 async function draw(timestamp) {
     // used in some nodes
     context.editor = {
@@ -181,9 +184,17 @@ async function draw(timestamp) {
     delta += timestamp - lastTimestamp
     lastTimestamp = timestamp
 
+    var updates = 0
     while (delta >= millisecondsPerUpdate && !(context.editor.debug && context.editor.pause)) {
         delta -= millisecondsPerUpdate
+        var start = performance.now()
         flow.update(context.editor)
+        updateTime = performance.now() - start
+        updates += 1
+        if (updates > 9) {
+            console.warn('>=10 updates in a single frame, aborting')
+            delta = 0
+        }
     }
     const now = Date.now()
     /*var updates = 0
@@ -208,6 +219,7 @@ async function draw(timestamp) {
     else
         return
 
+    var start = performance.now()
     // correct sizes
     canvas.width = canvas.clientWidth
     canvas.height = canvas.clientHeight
@@ -304,6 +316,7 @@ async function draw(timestamp) {
         context.rect(selectStart[0], selectStart[1], lastPointerPos[0] - selectStart[0], lastPointerPos[1] - selectStart[1])
         context.stroke()
     }
+    drawTime = performance.now() - start
 }
 
 async function main() {
@@ -392,8 +405,17 @@ async function main() {
                 if (selectedNodes != null) {
                     if (selectedNodes.some(n => nodes.includes(n))) {
                         // drag
-                        selectedNodesDragging = true
-                        dragStartPos = [...lastPointerPos]
+                        
+                        if (heldKeys.includes('shift')) {
+                            nodes.forEach(n => {
+                                n.ghost = false
+                                selectedNodes.splice(selectedNodes.indexOf(n), 1)
+                            })
+                        }
+                        else {
+                            selectedNodesDragging = true
+                            dragStartPos = [...lastPointerPos]
+                        }
                         pointerPrimaryPressed = false
                     }
                     else {
@@ -432,7 +454,6 @@ async function main() {
         if (pointerSecondaryPressed) {
             if (selectedConnectionPoint != null) {
                 if (ghostConnection.visualPoints.length > 0) {
-                    console.log('remove point')
                     ghostConnection.visualPoints.splice(ghostConnection.visualPoints.length - 1, 1)
                 }
                 else {
@@ -563,9 +584,17 @@ async function main() {
                 //const p = n.getRelative(0, 0) // based on top left point (when not rotated)... so.. it's fine for now
                 //return -p[0] >= minX && -p[0] <= maxX && -p[1] >= minY && -p[1] <= maxY
             })
-            if (selectedNodes != null)
-                selectedNodes.forEach(n => n.ghost = false)
-            selectedNodes = nodes
+            if (heldKeys.includes("shift")) {
+                nodes.forEach(n => {
+                    if (!selectedNodes.includes(n))
+                        selectedNodes.push(n)
+                })
+            }
+            else {
+                if (selectedNodes != null)
+                    selectedNodes.forEach(n => n.ghost = false)
+                selectedNodes = nodes
+            }
             selectedNodes.forEach(n => n.ghost = true)
 
             selectStart = null
@@ -588,9 +617,11 @@ async function main() {
             if (key == 'q' && e.ctrlKey)
                 context.editor.debug = !context.editor.debug
         }
-        if (key == 'q')
+        if (key == 'p')
+            alert(`Draw Time: ${drawTime}ms\nUpdate Time: ${updateTime}ms`)
+        else if (key == 'q')
             flow.update(context.editor)
-        if (key == 'r' && creatingNode != null)
+        else if (key == 'r' && creatingNode != null)
             creatingNode.rotation = (creatingNode.rotation + 90) % 360
         else if (key == 'r' && selectedNodes != null) // rotation 90deg
             selectedNodes.forEach(n => n.rotation = (n.rotation + 90) % 360)

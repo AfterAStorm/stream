@@ -19,6 +19,10 @@ export class Node extends BaseNode {
         this.value = 0
         this.lastLeft = 0
         this.lastRight = 0
+
+        //this.cache = new OffscreenCanvas(...this.getSize(10))
+        //this.invalidated = true
+        this.cached = true // tell node we are caching stuff
     }
 
     serialize() {
@@ -43,12 +47,14 @@ export class Node extends BaseNode {
             this.lastLeft = left
             if (left > 0 && this.value == 0) {
                 this.value = left
+                this.invalidated = true
             }
         }
         if (right != this.lastRight) {
             this.lastRight = right
             if (right > 0 && this.value != 0) {
                 this.value = 0
+                this.invalidated = true
             }
         }
         
@@ -62,39 +68,47 @@ export class Node extends BaseNode {
      * @param {CanvasRenderingContext2D} context 
      */
     draw(context) {
-        super.draw(context)
+        const context2 = super.draw(context)
+        if (!context2)
+            return this.cacheDraw(context)
 
         const size = this.getSize()
+
+        /*if (!this.invalidated)
+            return
+        this.invalidated = false*/
 
         // draw
         const centerX = size[0] / 2
         const centerY = size[1] / 2
         const radius = Math.min(centerX, centerY) / 2 / 1
         const offset = radius / 3
-        context.beginPath()
+        context2.beginPath()
 
         // MEMORY CELL symbol
-        context.lineCap = 'round'
+        context2.lineCap = 'round'
 
-        context.strokeStyle = this.value != 0 ? this.ON_COLOR : this.OFF_COLOR
+        context2.strokeStyle = this.value != 0 ? this.ON_COLOR : this.OFF_COLOR
         for (let i = 0; i < 5; i++) {
             const y = ((i + 1) / 6)
-            context.beginPath()
-            context.moveTo(centerX - radius, centerY - radius + y * radius * 2)
-            context.lineTo(centerX - radius + offset, centerY - radius + y * radius * 2)
-            context.moveTo(centerX + radius - offset, centerY - radius + y * radius * 2)
-            context.lineTo(centerX + radius, centerY - radius + y * radius * 2)
-            context.stroke()
+            context2.beginPath()
+            context2.moveTo(centerX - radius, centerY - radius + y * radius * 2)
+            context2.lineTo(centerX - radius + offset, centerY - radius + y * radius * 2)
+            context2.moveTo(centerX + radius - offset, centerY - radius + y * radius * 2)
+            context2.lineTo(centerX + radius, centerY - radius + y * radius * 2)
+            context2.stroke()
         }
         
-        context.beginPath()
-        context.strokeStyle = '#000'
-        context.moveTo(centerX - radius + offset, centerY - radius) // tl
-        context.lineTo(centerX + radius - offset, centerY - radius) // tr
-        context.lineTo(centerX + radius - offset, centerY + radius) // br
-        context.lineTo(centerX - radius + offset, centerY + radius) // bl
-        context.closePath()
-        context.stroke()
+        context2.beginPath()
+        context2.strokeStyle = '#000'
+        context2.moveTo(centerX - radius + offset, centerY - radius) // tl
+        context2.lineTo(centerX + radius - offset, centerY - radius) // tr
+        context2.lineTo(centerX + radius - offset, centerY + radius) // br
+        context2.lineTo(centerX - radius + offset, centerY + radius) // bl
+        context2.closePath()
+        context2.stroke()
 
+        console.log('cache draw')
+        this.cacheDraw(context)
     }
 }

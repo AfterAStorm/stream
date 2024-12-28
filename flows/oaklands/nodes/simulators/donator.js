@@ -14,7 +14,7 @@ export class Node extends BaseNode {
     static id         = "donator"
     static display    = "Donator"
     static size       = [.75, 1.25]
-    static icon       = "https://static.wikia.nocookie.net/oaklands/images/d/db/Interactor.png"
+    static icon       = "$assets/unknown.png"
     static category   = "simulators"
 
     constructor() {

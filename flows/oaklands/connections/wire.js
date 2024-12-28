@@ -54,6 +54,8 @@ export class Connection {
     }
 
     has(connectionPoint) {
+        if (connectionPoint == null)
+            return false
         return this.points.some(p => p.node == connectionPoint.node && p.id == connectionPoint.id)
     }
 

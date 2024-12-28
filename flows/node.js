@@ -59,6 +59,9 @@ export class BaseNode {
         this.display = this.constructor.display
         this.icon = this.constructor.icon
         this.category = this.constructor.category
+        this.cached = false
+        this.invalidated = true
+        this.cacheScale = 1
 
         // logic
         this.connectionPoints = []
@@ -218,8 +221,8 @@ export class BaseNode {
 
     /* VISUAL */
 
-    getSize() {
-        return this.size.map(x => x * 100)
+    getSize(scale=1) {
+        return this.size.map(x => x * 100 * scale)
     }
 
     /* USER INTERACTION */
@@ -280,6 +283,21 @@ export class BaseNode {
         setTimeout(() => {
             modal.showModal()
             modalValue.select() // inputs are great technological advancements
+        }, 75)
+        this.editor.pointerPrimaryPressed = false // BAH
+        return new Promise(res => {
+            modal.onclose = () => {
+                res(modalValue.value)
+            }
+        })
+    }
+
+    async getUserSelectionInput(values, index=0) {
+        const modal = document.getElementById('select-input')
+        const modalValue = document.getElementById('select-input-value')
+        modalValue.innerHTML = values.map((value, i) => `<option value="${value}"${index == i ? ' selected' : ''}>${value}</option>`).join('')
+        setTimeout(() => {
+            modal.showModal()
         }, 75)
         this.editor.pointerPrimaryPressed = false // BAH
         return new Promise(res => {
@@ -412,16 +430,55 @@ export class BaseNode {
         context.roundRect(0, 0, ...size, 10)
         context.fill()
 
-        context.font = '15px monospace'
-        context.fillStyle = '#ddd'
-        context.textAlign = 'left'
-        context.textBaseline = 'top'
-        context.save()
-        if (size[0] <= size[1]) {
-            context.rotate(-Math.PI / 2)
-            context.translate(-size[1], 0)
+        if (this.cached) {
+            const scaledSize = this.getSize(10)
+            if (this.cache == null) {
+                this.cache = new OffscreenCanvas(...scaledSize)
+                //this.cache.width = scaledSize[0]
+                this.cacheContext = this.cache.getContext('2d', {alpha: true})
+            }
+            if (this.cache.width != scaledSize[0]) {
+                this.cache = new OffscreenCanvas(...scaledSize)
+                this.cacheContext = this.cache.getContext('2d', {alpha: true})
+            }
+
+
+            if (!this.invalidated)
+                return null
+            this.invalidated = false
+            this.cacheContext.reset()
+            this.cacheContext.resetTransform()
+            this.cacheScale = 2
+            this.cacheContext.translate(scaledSize[0] / 4, scaledSize[1] / 4)
+            //this.cacheContext.scale(1 / this.cacheScale * 5, 1 / this.cacheScale * 5)
+            this.cacheContext.scale(1 / this.cacheScale * 5, 1 / this.cacheScale * 5)
+            context = this.cacheContext
+            /*context.globalAlpha = .5
+            context.fillStyle = '#f00' // debug cubes
+            context.fillRect(-5000, -5000, 999999999, 99999999)
+            context.fillStyle = '#0f0'
+            context.fillRect(0, 0, ...this.getSize())
+            context.globalAlpha = .7*/
         }
-        context.fillText(this.display, 5, 5)
+
+        context.save()
+
+            context.beginPath()
+            context.rect(0, 0, ...size)
+            context.clip()
+
+            context.font = '15px monospace'
+            context.fillStyle = '#ddd'
+            context.textAlign = 'left'
+            context.textBaseline = 'top'
+            context.save()
+            if (size[0] <= size[1]) {
+                context.rotate(-Math.PI / 2)
+                context.translate(-size[1], 0)
+            }
+            context.fillText(this.display, 5, 5)
+            context.restore()
+
         context.restore()
 
 
@@ -429,6 +486,11 @@ export class BaseNode {
         this.drawPoints(context)
         
         context.fillStyle = '#fff'
-        
+        return context
+    }
+
+    cacheDraw(context) {
+        const size = this.getSize(this.cacheScale)
+        context.drawImage(this.cache, -size[0] / 2, -size[1] / 2, ...this.getSize(2 * this.cacheScale))
     }
 }

@@ -54,7 +54,8 @@
         "simulators/collider",
         "simulators/donator",
         "simulators/transmitter",
-        "simulators/receiver"
+        "simulators/receiver",
+        "simulators/weather_sensor"
     ],
 
     "updateSpeed": 0.03333333333

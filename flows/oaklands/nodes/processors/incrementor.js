@@ -19,6 +19,8 @@ export class Node extends BaseNode {
         this.count = 0
         this.lastLeft = 0
         this.lastRight = 0
+
+        this.cached = true
     }
 
     serialize() {
@@ -59,27 +61,30 @@ export class Node extends BaseNode {
      * @param {CanvasRenderingContext2D} context 
      */
     draw(context) {
-        super.draw(context)
+        const cachedContext = super.draw(context)
+        if (!cachedContext)
+            return this.cacheDraw(context)
 
         const size = this.getSize()
 
         // draw
-        context.strokeStyle = 'black'
+        cachedContext.strokeStyle = 'black'
         const centerX = size[0] / 2
         const centerY = size[1] / 2
         const radius = Math.min(centerX, centerY) / 2 / 1
-        context.beginPath()
+        cachedContext.beginPath()
 
         // INCREMENTOR symbol
-        context.lineCap = 'round'
-        context.moveTo(centerX - radius, centerY - radius)
-        context.lineTo(centerX - radius, centerY + radius)
-        context.stroke()
+        cachedContext.lineCap = 'round'
+        cachedContext.moveTo(centerX - radius, centerY - radius)
+        cachedContext.lineTo(centerX - radius, centerY + radius)
+        cachedContext.stroke()
 
-        context.fillStyle = '#000'
+        cachedContext.fillStyle = '#000'
         const barHeight = (radius * 2) / 5
         for (let i = 0; i < 5; i++) {
-            context.fillRect(centerX - radius, centerY - radius + i * barHeight, radius * 2 * ((i + 1) / 5), barHeight - 1)
+            cachedContext.fillRect(centerX - radius, centerY - radius + i * barHeight, radius * 2 * ((i + 1) / 5), barHeight - 1)
         }
+        this.cacheDraw(context)
     }
 }

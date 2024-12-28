@@ -15,6 +15,8 @@ export class Node extends BaseNode {
         this.addConnectionPoint('input', 'left', '#right', 'Right Input, the y of x > y')
         this.addConnectionPoint('output', 'right', '#result', 'GREATER THAN Result')
         this.setConnectionPointValue('#result', 0)
+
+        this.cached = true
     }
 
     update() {
@@ -37,23 +39,25 @@ export class Node extends BaseNode {
      * @param {CanvasRenderingContext2D} context 
      */
     draw(context) {
-        super.draw(context)
+        const cachedContext = super.draw(context)
+        if (!cachedContext)
+            return this.cacheDraw(context)
 
         const size = this.getSize()
 
         // draw
-        context.strokeStyle = 'black'
+        cachedContext.strokeStyle = 'black'
         const centerX = size[0] / 2
         const centerY = size[1] / 2
         const radius = Math.min(centerX, centerY) / 2 / 1
-        context.beginPath()
+        cachedContext.beginPath()
 
         // GREATER THAN GATE symbol
-        context.lineCap = 'round'
-        context.moveTo(centerX - radius, centerY - radius)
-        context.lineTo(centerX + radius, centerY)
-        context.lineTo(centerX - radius, centerY + radius)
-        context.stroke()
-
+        cachedContext.lineCap = 'round'
+        cachedContext.moveTo(centerX - radius, centerY - radius)
+        cachedContext.lineTo(centerX + radius, centerY)
+        cachedContext.lineTo(centerX - radius, centerY + radius)
+        cachedContext.stroke()
+        this.cacheDraw(context)
     }
 }

@@ -18,6 +18,10 @@ export class Node extends BaseNode {
 
         this.pressed = false
         this.cooldown = false
+        
+        this.lastRight = 0
+
+        this.cached = true
     }
 
     update() {
@@ -29,8 +33,13 @@ export class Node extends BaseNode {
         if (right > 0) {
             setOutput = this.getConnectionPointValue('#left')
         }
+        if (right != this.lastRight) {
+            this.lastRight = right
+            this.invalidated = true
+        }
         
         if (setOutput != currentOutput) {
+            this.invalidated = true
             this.setConnectionPointValue('#result', setOutput)
         }
     }
@@ -39,7 +48,12 @@ export class Node extends BaseNode {
      * @param {CanvasRenderingContext2D} context 
      */
     draw(context) {
-        super.draw(context)
+        //super.draw(context)
+        const context2 = super.draw(context)
+        if (!context2)
+            return this.cacheDraw(context)
+        const orig = context
+        context = context2
 
         const size = this.getSize()
 
@@ -88,6 +102,6 @@ export class Node extends BaseNode {
         context.moveTo(7, y)
         context.lineTo(centerX - radius, y)
         context.stroke()
-
+        this.cacheDraw(orig)
     }
 }

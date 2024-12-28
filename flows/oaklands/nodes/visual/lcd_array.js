@@ -49,6 +49,9 @@ export class Node extends BaseNode {
 
         this.width = 5
         this.height = 5
+
+        this.cached = true
+        this.cacheScale = 2
     }
 
     serialize() {
@@ -66,10 +69,24 @@ export class Node extends BaseNode {
         this.height = data.height || 5
         this.size[0] = data.sizew || 2
         this.size[1] = data.sizeh || 2
+        
+        const neededPoints = this.width * this.height
+        if (this.connectionPoints.length < neededPoints)
+            for (let i = this.connectionPoints.length; i < neededPoints; i++)
+                this.addConnectionPoint('input', 'left', `#color${i}`, `Light Color ${i}`)
     }
 
     update() {
         super.update()
+
+        const node = this
+        this.connectionPoints.forEach(c => {
+            this.getConnectionPointValue(c.id)
+            if (c.value != c.last) {
+                c.last = c.value
+                node.invalidated = true
+            }
+        })
 
         // changing value
         const isPressed = this.isPointerPressed()
@@ -104,6 +121,7 @@ export class Node extends BaseNode {
                     if (Number.isNaN(this.size[1]))
                         this.size[1] = 2
                 }
+                this.invalidated = true
             })
         }
         else if (this.isHoveringRectangle(pos, 0, -20, 80, 20)) { // WIDTH/HEIGHT
@@ -130,6 +148,7 @@ export class Node extends BaseNode {
                 if (this.connectionPoints.length < neededPoints)
                     for (let i = this.connectionPoints.length; i < neededPoints; i++)
                         this.addConnectionPoint('input', 'left', `#color${i}`, `Light Color ${i}`)
+                this.invalidated = true
             })
         }
     }
@@ -186,7 +205,11 @@ export class Node extends BaseNode {
      * @param {CanvasRenderingContext2D} context 
      */
     draw(context) {
-        super.draw(context)
+        const context2 = super.draw(context)
+        if (!context2)
+            return this.cacheDraw(context)
+        const orig = context
+        context = context2
 
         const size = this.getSize()
 
@@ -284,5 +307,6 @@ export class Node extends BaseNode {
         context.arc(size[0] / 2, size[1] / 2, size[0] / 2 / 1.5, 0, Math.PI * 2)
         context.fill()
         context.stroke()*/
+        this.cacheDraw(orig)
     }
 }
