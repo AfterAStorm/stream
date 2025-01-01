@@ -52,96 +52,113 @@ function decompress(flowString) {
             
 }
 
-const params = new URLSearchParams(location.search)
-const share = params.get('share')
 var flow
-if (share != null) {
-    try {
-        const shareJson = decompress(share)
-        pan = shareJson.pan || [0, 0]
-        scale = shareJson.scale || 1
-        flow = new Flow()
-        flow.deserialize(shareJson)
+
+async function load() {
+    const params = new URLSearchParams(location.search)
+    const share = params.get('share')
+    const flowId = params.get('flow')
+    const example = params.get('example')
+    if (share != null) {
+        try {
+            const shareJson = decompress(share)
+            pan = shareJson.pan || [0, 0]
+            scale = shareJson.scale || 1
+            flow = new Flow()
+            flow.deserialize(shareJson)
+        }
+        catch (e) {
+            flow = null
+            console.error(e)
+        }
     }
-    catch (e) {
-        flow = null
-        console.error(e)
+    else if (flowId != null && example != null) {
+        flow = new Flow(flowId)
+        fetch(`../../flows/${flow.id}/examples/${example}.flow`).then(r => r.text()).then(data => {
+            const exampleJson = decompress(decodeURIComponent(data))
+            pan = exampleJson.pan || [0, 0]
+            scale = exampleJson.scale || 1
+            flow.deserialize(exampleJson)
+        })
     }
-}
-if (flow == null)
-    flow = new Flow('oaklands')
-flow.load().then(() => {
-    millisecondsPerUpdate = 1000 * flow.updateSpeed
-    console.warn('millisecondsPerUpdate', millisecondsPerUpdate)
+    else if (flowId != null)
+        flow = new Flow(flowId)
+    if (flow == null)
+        flow = new Flow('oaklands')
+    flow.load().then(() => {
+        millisecondsPerUpdate = 1000 * flow.updateSpeed
+        console.warn('millisecondsPerUpdate', millisecondsPerUpdate)
 
-    /*const btn = new flow.nodeDefinitions.number_interface()
-    const btn2 = new flow.nodeDefinitions.button()
-    btn2.position[1] += 300
+        /*const btn = new flow.nodeDefinitions.number_interface()
+        const btn2 = new flow.nodeDefinitions.button()
+        btn2.position[1] += 300
 
-    const and = new flow.nodeDefinitions.gate_relay()
-    and.position[0] += 300
+        const and = new flow.nodeDefinitions.gate_relay()
+        and.position[0] += 300
 
-    const lcd = new flow.nodeDefinitions.lcd()
+        const lcd = new flow.nodeDefinitions.lcd()
 
-    const wire = new flow.connectionDefinitions.wire(btn.connectionPoints[0], and.connectionPoints[0])
-    //const wire2 = new flow.connectionDefinitions.wire(btn2.connectionPoints[0], and.connectionPoints[1])
-    //const wire3 = new flow.connectionDefinitions.wire(and.connectionPoints[2], lcd.connectionPoints[0])
-    //flow.connections.push(wire)//, wire2, wire3)
+        const wire = new flow.connectionDefinitions.wire(btn.connectionPoints[0], and.connectionPoints[0])
+        //const wire2 = new flow.connectionDefinitions.wire(btn2.connectionPoints[0], and.connectionPoints[1])
+        //const wire3 = new flow.connectionDefinitions.wire(and.connectionPoints[2], lcd.connectionPoints[0])
+        //flow.connections.push(wire)//, wire2, wire3)
 
-    lcd.position[0] += 500
-    lcd.position[1] += 25*/
+        lcd.position[0] += 500
+        lcd.position[1] += 25*/
 
-    //flow.nodes.push(btn, btn2, and, lcd)
+        //flow.nodes.push(btn, btn2, and, lcd)
 
-    const sidebar = document.querySelector('#sidebar')
+        const sidebar = document.querySelector('#sidebar')
 
-    const categories = Object.values(flow.nodeDefinitions)
-        .map(nd => nd.category)
-        .filter((val, ind, arr) => arr.indexOf(val) == ind)
-        .sort((a, b) => a.localeCompare(b))
+        const categories = Object.values(flow.nodeDefinitions)
+            .map(nd => nd.category)
+            .filter((val, ind, arr) => arr.indexOf(val) == ind)
+            .sort((a, b) => a.localeCompare(b))
 
-    categories.forEach(cat => {
-        const div = document.createElement('div')
-        div.classList.add('category')
-        div.innerHTML = `<span>${cat}</span>`
-        sidebar.appendChild(div)
-        const items = document.createElement('div')
-        items.classList.add('category-items')
-        sidebar.appendChild(items)
-
-        const categoryElements = []
-
-        const nodes = Object.values(flow.nodeDefinitions)
-            .filter(nd => nd.category == cat)
-            .sort((a, b) => a.display.localeCompare(b.display))
-        nodes.forEach(nd => {
+        categories.forEach(cat => {
             const div = document.createElement('div')
-            div.classList.add('category-item')
-            div.innerHTML = `<img width="40" height="40"
-src="${nd.icon.replace('$assets', `../../flows/${flow.id}/assets`)}"><span>${nd.display}</span>`
+            div.classList.add('category')
+            div.innerHTML = `<span>${cat}</span>`
+            sidebar.appendChild(div)
+            const items = document.createElement('div')
+            items.classList.add('category-items')
+            sidebar.appendChild(items)
 
-            div.addEventListener('pointerdown', e => {
-                creatingNode = new nd()
-                creatingNode.position[0] = -100000000000
-                creatingNode.ghost = true
-                flow.nodes.push(creatingNode)
+            const categoryElements = []
+
+            const nodes = Object.values(flow.nodeDefinitions)
+                .filter(nd => nd.category == cat)
+                .sort((a, b) => a.display.localeCompare(b.display))
+            nodes.forEach(nd => {
+                const div = document.createElement('div')
+                div.classList.add('category-item')
+                div.innerHTML = `<img width="40" height="40"
+    src="${nd.icon.replace('$assets', `../../flows/${flow.id}/assets`)}"><span>${nd.display}</span>`
+
+                div.addEventListener('pointerdown', e => {
+                    creatingNode = new nd()
+                    creatingNode.position[0] = -100000000000
+                    creatingNode.ghost = true
+                    flow.nodes.push(creatingNode)
+                })
+
+                items.appendChild(div)
+                categoryElements.push(div)
             })
 
-            items.appendChild(div)
-            categoryElements.push(div)
+            var toggle = true
+            div.addEventListener('click', () => {
+                toggle = !toggle
+                items.classList.toggle('minimized', !toggle)
+            })
         })
-
-        var toggle = true
-        div.addEventListener('click', () => {
-            toggle = !toggle
-            items.classList.toggle('minimized', !toggle)
-        })
+        //flow.connections.push(wire, wire2, wire3)
+    }).catch(e => {
+        console.error(e)
+        alert('Failed to fetch flow! Check your internet connection (or server status).')
     })
-    //flow.connections.push(wire, wire2, wire3)
-}).catch(e => {
-    console.error(e)
-    alert('Failed to fetch flow! Check your internet connection (or server status).')
-})
+}
+load()
 
 String.prototype.strip = function(char) {
     var str = this
@@ -176,6 +193,10 @@ function updateEditorContext() {
 }
 
 async function draw(timestamp) {
+    if (flow == null) {
+        setInterval(() => requestAnimationFrame(draw), 100)
+        return
+    }
     // used in some nodes
     updateEditorContext()
 
@@ -348,6 +369,8 @@ async function main() {
             
         if (interactionMode)
             return
+        if (flow == null)
+            return
         
         if (pointerPrimaryPressed) {
             updateEditorContext()
@@ -475,7 +498,7 @@ async function main() {
                 }
             }
         }
-        
+
         if (pointerSecondaryPressed) {
             var points = flow.getConnectionPointsAt(...lastPointerPos)
             if (points.length > 0 && selectedConnectionPoints != null) {
@@ -531,6 +554,8 @@ async function main() {
     })
 
     canvas.addEventListener('pointermove', e => {
+        if (flow == null)
+            return
         const offsetX = e.offsetX - lastPointerPos[0]
         const offsetY = e.offsetY - lastPointerPos[1]
         lastPointerPos = [e.offsetX, e.offsetY]
@@ -603,6 +628,8 @@ async function main() {
     })
 
     canvas.addEventListener('pointerleave', e => {
+        if (flow == null)
+            return
         if (e.pointerType != 'mouse')
             return
         insideCanvas = false
@@ -613,6 +640,8 @@ async function main() {
     })
 
     document.addEventListener('pointerup', e => {
+        if (flow == null)
+            return
         pointerPrimaryPressed = false
         selectedNodesDragging = false
         if (selectStart != null) {
@@ -834,10 +863,12 @@ async function main() {
 
         if (value != '#close') {
             const url = new URL(location.href)
-            fetch(`../../flows/${flow.id}/examples/${value}.flow`).then(r => r.text()).then(example => {
+            /*fetch(`../../flows/${flow.id}/examples/${value}.flow`).then(r => r.text()).then(example => {
                 history.pushState(null, '', `${url.origin}${url.pathname}?share=${example}`)
                 location.reload()
-            })
+            })*/
+            history.pushState(null, '', `${url.origin}${url.pathname}?example=${value}&flow=${flow.id}`)
+            location.reload()
         }
     })
 
