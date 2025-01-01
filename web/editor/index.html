@@ -64,6 +64,7 @@
                 <p>Hold <b>Control</b> and drag to multi-select; it's based on the nodes upper most left point at zero rotation.</p>
                 <p>You can enable interaction mode in the top left, letting you only "interact", being button presses and changing values while disabling node/connection movement. Useful for testing arrays of buttons and such.</p>
                 <p>Press <b>Ctrl + Q</b> to enter/exit debug mode, and press <b>Q</b> to step a single update tick; green nodes are updated nodes, the brighter the farther from the source</p>
+                <p>Press <b>P</b> to see a performance summary of the last frame/update</p>
                 <h2>Contributing & Support</h2>
                 <p>If you wish to create any PRs or even dare look at the "<i>codebase</i>", goodluck.</p>
                 <p class="inline">For any suggestions/etc. contact <div class="spoiler">me</div> on discord</p>
@@ -100,6 +101,14 @@
                 <p><button value="binary">Counting w/ Binary</button> <i>Using binary outputs, count with binary!</i></p>
                 <br /><br />
                 <button onfocusout="this.parentElement.parentElement.returnValue = '#close'; this.parentElement.submit()" value="#close">Nevermind</button>
+            </form>
+        </dialog>
+        <dialog id="general-notice">
+            <form method="dialog">
+                <h1 id="general-notice-title">summary</h1>
+                <p id="general-notice-body"></p>
+                <br />
+                <button>Alrighty</button>
             </form>
         </dialog>
         <dialog id="summary-notice">

@@ -108,7 +108,6 @@ export class Node extends BaseNode {
         context2.closePath()
         context2.stroke()
 
-        console.log('cache draw')
         this.cacheDraw(context)
     }
 }

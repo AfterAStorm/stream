@@ -104,12 +104,16 @@ export class Flow {
                 return
             node.hasUpdated = true
             node.needsSoftUpdate = false
+            const a = performance.now()
             node.update()
+            node.debug.updateTime = performance.now() - a
             node.debug.depth = depth * 2
         }
         if (node.needsSoftUpdate) {
             node.needsSoftUpdate = false
+            const a = performance.now()
             node.update()
+            node.debug.softUpdateTime = performance.now() - a
             node.debug.updated = true
         }
         
@@ -147,20 +151,43 @@ export class Flow {
      * Update node states
      */
     update(editor) {
-        editor.flow = this
-        this.connections.forEach(c => {
-            c.editor = editor
-        })
+        this.updateEditor(editor)
         this.nodes.sort((a, b) => b.getPriority() - a.getPriority())
         this.nodes.forEach(n => {
             n.needsSoftUpdate = true
             n.hasUpdated = false
-            n.editor = editor
             n.debug.depth = 0
             n.debug.updated = false
         })
+        this.updateNodeConnectionCaches()
         this.nodes.forEach(n => {
             this._updateNode(n)
+        })
+    }
+
+    /**
+     * Update node states
+     */
+    updateEditor(editor) {
+        this.editor = editor
+        editor.flow = this
+        this.connections.forEach(c => {
+            c.editor = editor
+        })
+        this.nodes.forEach(n => {
+            n.editor = editor
+        })
+    }
+
+    updateNodeConnectionCaches() {
+        this.nodes.forEach(n => {
+            n._connections = []
+        })
+        this.connections.forEach(c => {
+            c.points.forEach(p => {
+                if (p.node != null)
+                    p.node._connections.push(c)
+            })
         })
     }
 
@@ -171,14 +198,19 @@ export class Flow {
     draw(context) {
         this.nodes.forEach(n => {
             context.save()
+            const a = performance.now()
             n.draw(context)
+            n.debug.drawTime = performance.now() - a
             context.restore()
         })
-        this.connections.forEach(c => {
-            context.save()
-            c.draw(context)
-            context.restore()
-        })
+        const b = performance.now()
+        if (this.editor == null || this.editor.drawConnections != false)
+            this.connections.forEach(c => {
+                context.save()
+                c.draw(context)
+                context.restore()
+            })
+        this._connectionDrawTime = performance.now() - b // "temporary" debug variable
     }
 
     deserialize(json) {

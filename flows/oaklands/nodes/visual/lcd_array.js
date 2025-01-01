@@ -294,7 +294,7 @@ export class Node extends BaseNode {
         const sizeY = size[1] / this.height
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
-                const value = this.getConnectionPointValue(`#color${x + y * this.width}`)
+                const value = this.getLocalConnectionPointValue(`#color${x + y * this.width}`)
                 const hue = colorMap[Math.ceil(value / 10)] || [255, 255, 255]
                 const color = lerpV3([0, 0, 0], hue, 1 - (Math.ceil(value / 10) - value / 10))
                 context.fillStyle = `rgb(${color.join(',')})`

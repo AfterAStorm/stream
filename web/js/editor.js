@@ -31,6 +31,8 @@ var selectedNodes = null
 var selectedNodesDragging = false
 var selectedConnectionPoint = null
 
+var selectedConnectionPoints = null
+
 var creatingNode = null
 var insideCanvas = false
 
@@ -158,8 +160,7 @@ const connectionColor = document.querySelector('#connection-color')
 var drawTime = 0
 var updateTime = 0
 
-async function draw(timestamp) {
-    // used in some nodes
+function updateEditorContext() {
     context.editor = {
         'pointerPosition': lastPointerPos,
         'pointerPrimaryPressed': pointerPrimaryPressed,
@@ -168,8 +169,15 @@ async function draw(timestamp) {
         'scale': scale,
         'debug': context.editor?.debug || false,
         'pause': true,
-        'tick': context.editor?.tick || 0
+        'tick': context.editor?.tick || 0,
+
+        'drawConnections': true
     }
+}
+
+async function draw(timestamp) {
+    // used in some nodes
+    updateEditorContext()
 
     // attempt to update
     if (ghostConnection != null)
@@ -342,6 +350,8 @@ async function main() {
             return
         
         if (pointerPrimaryPressed) {
+            updateEditorContext()
+            flow.updateEditor(context.editor)
             const connections = flow.getConnectionsAt(...lastPointerPos)
             var points = flow.getConnectionPointsAt(...lastPointerPos)
             const nodes = flow.getNodesAt(...lastPointerPos)
@@ -350,6 +360,10 @@ async function main() {
                 // handle multi drag
                 selectStart = [...lastPointerPos]
                 pointerPrimaryPressed = false
+            }
+
+            if (selectedConnectionPoints != null && selectedConnectionPoints.length == 0 && points.length == 0) {
+                selectedConnectionPoints = null;
             }
 
             if (connections.length > 0 && points.length == 0 && ghostConnection == null) {
@@ -370,7 +384,17 @@ async function main() {
                 pointerPrimaryPressed = false
             }
             else if (points.length > 0) {
-                if (selectedConnectionPoint != null) {
+                if (heldKeys.includes('alt')) {
+                    selectedConnectionPoints = selectedConnectionPoints ?? []
+                    points.forEach(point => {
+                        if (selectedConnectionPoints.includes(point)) {
+                            selectedConnectionPoints.splice(selectedConnectionPoints.indexOf(point), 1)
+                        }
+                        else
+                            selectedConnectionPoints.push(point)
+                    })
+                }
+                else if (selectedConnectionPoint != null) {
                     points = points.filter(p => flow.canConnectTo(selectedConnectionPoint, p))
                     if (points.length > 0) {
                         ghostConnection.b = points[0]
@@ -451,7 +475,27 @@ async function main() {
                 }
             }
         }
+        
         if (pointerSecondaryPressed) {
+            var points = flow.getConnectionPointsAt(...lastPointerPos)
+            if (points.length > 0 && selectedConnectionPoints != null) {
+                const target = points[0]
+                const targetIndex = target.node.connectionPoints.indexOf(target)
+
+                let selectedIndex = 0
+                for (let i = targetIndex; i <= Math.min(targetIndex + selectedConnectionPoints.length - 1, target.node.connectionPoints.length); i++) {
+                    const from = selectedConnectionPoints[selectedIndex]
+                    const to = target.node.connectionPoints[i]
+
+                    const connection = new flow.connectionDefinitions[flow.connectionPointTypes[from.type].connection](from, to)
+                    connection.color = connectionColor.value
+                    flow.connections.push(connection)
+
+                    selectedIndex++
+                }
+                selectedConnectionPoints = null
+                return
+            }
             if (selectedConnectionPoint != null) {
                 if (ghostConnection.visualPoints.length > 0) {
                     ghostConnection.visualPoints.splice(ghostConnection.visualPoints.length - 1, 1)
@@ -610,6 +654,24 @@ async function main() {
         selectedConnection = null
     })
 
+    function calculateNodeTotals(property) {
+        return Object.entries(flow.nodes.reduce((accu, node) => {
+            accu[node.id] = accu[node.id] ?? 0
+            accu[node.id + '_total'] = accu[node.id + '_total'] ?? 0
+            accu[node.id + '_sum'] = accu[node.id + '_sum'] ?? 0
+            accu[node.id] += node.debug[property]
+            accu[node.id + '_total'] += 1
+            accu[node.id + '_sum'] += node.debug[property]
+            return accu
+        }, {})).map((pair, index, array) => {
+            if (pair[0].endsWith('_total') || pair[0].endsWith('_sum'))
+                return
+            const total = array.find(entry => entry[0] == (pair[0] + '_total'))[1]
+            const sum = array.find(entry => entry[0] == (pair[0] + '_sum'))[1]
+            return `<---> x${total} ${pair[0]}: ${(pair[1] / total).toFixed(3)}ms (combined ${sum.toFixed(3)}ms)`
+        }).filter(v => v != null)
+    }
+
     document.addEventListener('keydown', e => {
         const key = e.key.toLowerCase()
         if (!e.repeat && !heldKeys.includes(key)) {
@@ -617,14 +679,20 @@ async function main() {
             if (key == 'q' && e.ctrlKey)
                 context.editor.debug = !context.editor.debug
         }
-        if (key == 'p')
-            alert(`Draw Time: ${drawTime}ms\nUpdate Time: ${updateTime}ms`)
+        if (key == 'p') {
+            const softUpdateAverages = calculateNodeTotals('softUpdateTime')
+            const drawAverages = calculateNodeTotals('drawTime')
+            // i really want to say per capita-- sounds cooler :D
+            /*alert*/showNotice('performance', `Total Draw Time: ${drawTime.toFixed(3)}ms\nConnection Draw Time: ${flow._connectionDrawTime.toFixed(3)}ms\nDraw Per Component Capita:\n${drawAverages.join('\n')}\n\nUpdate Time: ${updateTime.toFixed(3)}ms\nSoft Update Averages:\n${softUpdateAverages.join('\n')}`)
+        }
         else if (key == 'q')
             flow.update(context.editor)
-        else if (key == 'r' && creatingNode != null)
+        else if (key == 'r' && creatingNode != null) {
             creatingNode.rotation = (creatingNode.rotation + 90) % 360
+            creatingNode.invalidate()
+        }
         else if (key == 'r' && selectedNodes != null) // rotation 90deg
-            selectedNodes.forEach(n => n.rotation = (n.rotation + 90) % 360)
+            selectedNodes.forEach(n => { n.rotation = (n.rotation + 90) % 360; n.invalidate() })
         else if (key == 'e' && ghostConnection == null) { // clone wire at
             const connections = flow.getConnectionsAt(...lastPointerPos)
 
@@ -837,6 +905,16 @@ async function main() {
         }, {})).sort((a, b) => b[1] - a[1]).map((v, i) => `x${v[1]} ${v[0]}`).join('<br />')
         summaryDialog.showModal()
     })
+
+    const generalNotice = document.querySelector('#general-notice')
+    const generalNoticeTitle = document.querySelector('#general-notice-title')
+    const generalNoticeBody = document.querySelector('#general-notice-body')
+
+    function showNotice(title, body) {
+        generalNotice.showModal()
+        generalNoticeTitle.innerText = title
+        generalNoticeBody.innerText = body
+    }    
 
     requestAnimationFrame(draw)
 }

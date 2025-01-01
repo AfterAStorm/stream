@@ -43,7 +43,8 @@ export class Node extends BaseNode {
         const right = this.getConnectionPointValue('#right')
         if (left != this.lastLeft) {
             this.lastLeft = left
-            this.count += Math.floor(left / 10)
+            this.count += left / 10
+            //this.count = Math.floor(this.count * 100) / 100 // rounding is for nerds
         }
         if (right != this.lastRight) {
             this.lastRight = right

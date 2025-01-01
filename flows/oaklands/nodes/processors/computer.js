@@ -109,7 +109,7 @@ export class Node extends BaseNode {
         
         context.fillStyle = '#ddd'
         context.beginPath()
-        context.roundRect(21, size[1] - 21, size[0] - 42, 38, 10)
+        context.roundRect(21, size[1] - 21, size[0] - 42, 40, 10)
         context.fill()
         
         context.restore()

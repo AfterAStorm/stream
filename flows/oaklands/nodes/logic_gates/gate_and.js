@@ -16,8 +16,13 @@ export class Node extends BaseNode {
         this.addConnectionPoint('output', 'right', '#result', 'AND Result, when left and right inputs are the same\n**Outputs: ⚡ LEFT/RIGHT VALUE')
         this.setConnectionPointValue('#result', 0)
 
+        this.cached = true
+
         this.pressed = false
         this.cooldown = false
+
+        this.lastLeft = 0
+        this.lastRight = 0
     }
 
     update() {
@@ -26,8 +31,19 @@ export class Node extends BaseNode {
         const currentOutput = this.getLocalConnectionPointValue('#result')
         var setOutput = 0
         const left = this.getConnectionPointValue('#left')
-        if (left == this.getConnectionPointValue('#right')) {
+        const right = this.getConnectionPointValue('#right')
+        if (left == right) {
             setOutput = left
+        }
+
+        if (left != this.lastLeft) {
+            this.lastLeft = left
+            this.invalidated = true
+        }
+
+        if (right != this.lastRight) {
+            this.lastRight = right
+            this.invalidated = true
         }
         
         if (setOutput != currentOutput) {
@@ -39,7 +55,12 @@ export class Node extends BaseNode {
      * @param {CanvasRenderingContext2D} context 
      */
     draw(context) {
-        super.draw(context)
+        //super.draw(context)
+        const context2 = super.draw(context)
+        if (!context2)
+            return this.cacheDraw(context)
+        const orig = context
+        context = context2
 
         const size = this.getSize()
 
@@ -85,5 +106,6 @@ export class Node extends BaseNode {
         context.lineTo(centerX - radius, y)
         context.stroke()
 
+        this.cacheDraw(orig)
     }
 }

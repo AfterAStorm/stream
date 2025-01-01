@@ -72,6 +72,8 @@ export class BaseNode {
         this.needsUpdate = false
         this.needsConnectionUpdate = false
 
+        this._connections = [] // set in editor caching stuff
+
         // other
         this.editor = null // set before update
         this.ghost = false // is the node a ghost? (preview)
@@ -136,6 +138,8 @@ export class BaseNode {
         if (typeof(indexOrId) != Number)
             indexOrId = this.connectionPoints.findIndex(p => p.id == indexOrId)
         const point = this.connectionPoints[indexOrId]
+        if (point.value == value)
+            return // already the same... so do nothing
         point.value = value
         this.needsConnectionUpdate = true
     }
@@ -145,7 +149,7 @@ export class BaseNode {
             indexOrId = this.connectionPoints.findIndex(p => p.id == indexOrId)
         const point = this.connectionPoints[indexOrId]
         // get all connections
-        const value = this.editor != null ? this.editor.flow.connections.filter(c => c.has(point)).reduce((p, v) => p + v.value, 0) : 0
+        const value = this.editor != null ? this._connections.filter(c => c.has(point)).reduce((p, v) => p + v.value, 0) : 0//this.editor.flow.connections.filter(c => c.has(point)).reduce((p, v) => p + v.value, 0) : 0
         if (point != null)
             point.value = value
 
@@ -375,6 +379,10 @@ export class BaseNode {
         remove.forEach(r => {
             this.scheduledTasks.splice(this.scheduledTasks.indexOf(r), 1)
         })
+    }
+
+    invalidate() {
+        this.invalidated = true
     }
 
     drawPoints(context) {
