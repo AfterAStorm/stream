@@ -246,7 +246,6 @@ export class EditorState {
         else {
             if (!this.isDragging) {
                 this.isDragging = true
-                console.log('MOVE')
                 this.addHistory('move', {
                     nodes: this.selectedNodes.map(node => [node, [...node.position]]),
                     connections: this.editor.flow.connections
@@ -759,7 +758,6 @@ export class EditorState {
                 const bind = this.keybinds.move
                 const create = () => {
                     this.creatingNode = new nd()
-                    console.log(this, this.creatingNode)
                     this.creatingNode.position[0] = -100000000000
                     this.editor.flow.nodes.push(this.creatingNode)
                     this.selectNodes([this.creatingNode])
