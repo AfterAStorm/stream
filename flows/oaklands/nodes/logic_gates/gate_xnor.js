@@ -3,8 +3,8 @@
 import { BaseNode } from "../../../node.js"
 
 export class Node extends BaseNode {
-    static id         = "gate_xnor"
-    static display    = "XNOR"
+    static id         = "gate_xnor" // internally still the same though :p
+    static display    = "XAND" // renamed to XOR to make the peoples happy (and to be more in-line with the actual game)
     static size       = [1, 1.25]
     static icon       = "$assets/xnor_gate.png"//"https://static.wikia.nocookie.net/oaklands/images/7/76/ORgate.png"
     static category   = "logic gates"

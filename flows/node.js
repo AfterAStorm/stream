@@ -288,7 +288,6 @@ export class BaseNode {
             modal.showModal()
             modalValue.select() // inputs are great technological advancements
         }, 75)
-        this.editor.pointerPrimaryPressed = false // BAH
         return new Promise(res => {
             modal.onclose = () => {
                 res(modalValue.value)
@@ -303,7 +302,6 @@ export class BaseNode {
         setTimeout(() => {
             modal.showModal()
         }, 75)
-        this.editor.pointerPrimaryPressed = false // BAH
         return new Promise(res => {
             modal.onclose = () => {
                 res(modalValue.value)
@@ -324,7 +322,7 @@ export class BaseNode {
             return [0, 0]
         }
 
-        const translation = editor.offset
+        const translation = editor.pan//.offset
         const scale = editor.scale
         const inverseScale = 1 / scale
         const pointerPos = [x, y]
@@ -341,11 +339,11 @@ export class BaseNode {
      * @param {CanvasRenderingContext2D} context 
      */
     getRelativePointer() {
-        return this.editor != null ? this.getRelative(...this.editor.pointerPosition) : [-99, -99]
+        return this.editor != null ? this.getRelative(...this.editor.position) : [-99, -99]
     }
 
     isPointerPressed() {
-        return this.editor.pointerPrimaryPressed
+        return this.editor.primaryPressed
     }
 
     /* TIMING */

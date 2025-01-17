@@ -11,6 +11,8 @@ export class Node extends BaseNode {
 
     constructor() {
         super()
+        
+        this.size = [1, 1]
 
         this.text = 'Group Box'
         this.color = null

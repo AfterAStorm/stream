@@ -17,6 +17,7 @@ export class Flow {
         this.connections = []
 
         this.loaded = false
+        this.onload = null
     }
 
     getNodesAt(x, y) {
@@ -45,6 +46,11 @@ export class Flow {
         if (defA.connects.includes(otherPoint.type))
             return true
         return false
+    }
+
+    getConnectionFor(point) {
+        const defA = this.connectionPointTypes[point.type]
+        return this.connectionDefinitions[defA.connection]
     }
 
     cutConnection(connection) {
@@ -94,6 +100,8 @@ export class Flow {
 
         return Promise.all(job).then(() => {
             this.loaded = true
+            if (this.onload != null)
+                this.onload()
         })
     }
 
@@ -107,7 +115,7 @@ export class Flow {
             const a = performance.now()
             node.update()
             node.debug.updateTime = performance.now() - a
-            node.debug.depth = depth * 2
+            node.debug.depth = depth // * 2 // why was i * 2 it?
         }
         if (node.needsSoftUpdate) {
             node.needsSoftUpdate = false
@@ -213,41 +221,39 @@ export class Flow {
         this._connectionDrawTime = performance.now() - b // "temporary" debug variable
     }
 
-    deserialize(json) {
+    async deserialize(json) {
         const flow = this
+        if (flow.id != json.flow)
+            flow.loaded = false
         flow.id = json.flow
 
         flow.nodes = []
         flow.connections = []
 
-        new Promise(async res => {
-            // wait for load
-            while (!flow.loaded)
-                await new Promise(res => setTimeout(res, 10))
-            res()
-        }).then(() => {
-            json.nodes.forEach(node => { // we assume this is in the correct order :p
-                const def = flow.nodeDefinitions[node.id]
-                if (def == null) {
-                    console.warn(`Failed to find definition for node ${node.id}`)
-                    return
-                }
+        if (!flow.loaded)
+            await flow.load()
 
-                const created = new def()
-                created.deserialize(node)
-                flow.nodes.push(created)
-            })
-            json.connections.forEach(connection => {
-                const def = flow.connectionDefinitions[connection.id]
-                if (def == null) {
-                    console.warn(`Failed to find definition for connection ${connection.id}`)
-                    return
-                }
+        json.nodes.forEach(node => { // we assume this is in the correct order :p
+            const def = flow.nodeDefinitions[node.id]
+            if (def == null) {
+                console.warn(`Failed to find definition for node ${node.id}`)
+                return
+            }
 
-                const created = new def()
-                created.deserialize(connection, flow)
-                flow.connections.push(created)
-            })
+            const created = new def()
+            created.deserialize(node)
+            flow.nodes.push(created)
+        })
+        json.connections.forEach(connection => {
+            const def = flow.connectionDefinitions[connection.id]
+            if (def == null) {
+                console.warn(`Failed to find definition for connection ${connection.id}`)
+                return
+            }
+
+            const created = new def()
+            created.deserialize(connection, flow)
+            flow.connections.push(created)
         })
 
         return this

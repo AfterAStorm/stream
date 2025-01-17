@@ -49,6 +49,24 @@ dialog {
     background-color: transparent;
     background-repeat: none;
     border: none;
+    position: relative;
+}
+
+.tooltip {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 50%;
+    transform: translate(-50%, 0%);
+    width: auto;
+    height: auto;
+    font-family: monospace;
+    display: none;
+    text-align: center;
+    font-size: 1rem;
+}
+
+*:has(.tooltip):hover > .tooltip {
+    display: block;
 }
 
 .material-symbols-outlined {
@@ -166,6 +184,26 @@ dialog {
     display: none;
 }
 
+#connection-colors {
+    display: inline-flex;
+    flex-direction: column;
+}
+
+#connection-colors > div {
+    display: flex;
+    flex-direction: row;
+    width: auto;
+    height: 20px;
+    margin: 0;
+}
+
+#connection-colors > div > div {
+    display: flex;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+}
+
 /* miscellaneous */
 
 #content {
@@ -200,6 +238,13 @@ p {
 .spoiler:hover {
     background-color: transparent;
     text-decoration: underline;
+}
+
+/* settings */
+
+.keybind {
+    min-width: 80px;
+    font-family: monospace;
 }
 
 /* media conditions */

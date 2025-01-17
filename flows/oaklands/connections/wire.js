@@ -64,7 +64,7 @@ export class Connection {
         if (editor == null)
             return [0, 0] // ffs
 
-        const translation = editor.offset
+        const translation = editor.pan//.offset
         const scale = editor.scale
         const inverseScale = 1 / scale
 
