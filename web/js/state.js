@@ -6,6 +6,7 @@ class Keybind {
         this.code = defaultCode ?? 'n/a'
         this.pressed = false
         this.pressedWas = false
+        this.releasedWas = false
     }
 
     press() {
@@ -15,6 +16,8 @@ class Keybind {
     }
 
     release() {
+        if (this.pressed)
+            this.releasedWas = true
         this.pressed = false
         this.pressedWas = false
     }
@@ -26,6 +29,14 @@ class Keybind {
     wasPressed() {
         if (this.pressedWas) {
             this.pressedWas = false
+            return true
+        }
+        return false
+    }
+
+    wasReleased() {
+        if (this.releasedWas) {
+            this.releasedWas = false
             return true
         }
         return false
@@ -525,8 +536,36 @@ export class EditorState {
         }
     }
 
+    handleLasso() {
+        const minX = Math.min(this.selectionStart[0], this.position[0])
+        const maxX = Math.max(this.selectionStart[0], this.position[0])
+        const minY = Math.min(this.selectionStart[1], this.position[1])
+        const maxY = Math.max(this.selectionStart[1], this.position[1])
+
+        const nodes = this.editor.flow.nodes.filter(node => {
+            const a = node.getRelative(minX, minY)
+            const b = node.getRelative(maxX, maxY)
+            return a[0] <= 0 && a[1] <= 0 && b[0] >= 0 && b[1] >= 0
+        })
+        if (this.isKeyHeld('Shift')) {
+            const newNodes = [...this.selectedNodes]
+            nodes.forEach(node => {
+                if (newNodes.includes(node))
+                    newNodes.splice(newNodes.indexOf(node), 1)
+                else
+                    newNodes.push(node)
+            })
+            this.selectNodes(newNodes)
+        }
+        else {
+            this.selectNodes(nodes)
+        }
+
+        this.selectionStart = null
+    }
+
     updateInputs() {
-        if (this.wasKeybindPressed('select')) {
+        if (this.selectionStart == null && this.wasKeybindPressed('select')) {
             this.handleSelect()
         }
         if (this.isKeybindHeld('delete')) {
@@ -537,6 +576,9 @@ export class EditorState {
         }
         if (this.isKeybindHeld('clone')) {
             this.handleClone()
+        }
+        if (this.selectionStart != null && (!this.isKeybindHeld('lasso') || !this.isKeybindHeld('select'))) {
+            this.handleLasso()
         }
 
         if (this.creatingNode != null && !this.isKeybindHeld('move')) {
@@ -579,7 +621,7 @@ export class EditorState {
         if (this.isKeybindHeld('pan')) {
             this.handlePan()
         }
-        if (this.isKeybindHeld('move')) {
+        if (this.isKeybindHeld('move') && this.selectionStart == null) {
             this.handleDrag()
         }
         else {
@@ -599,6 +641,7 @@ export class EditorState {
 
         Object.values(this.keybinds).forEach(kb => {if (kb.isMouse()) kb.release()})
         this.updateCursor()
+        this.updateInputs()
     }
 
     /**
@@ -654,6 +697,7 @@ export class EditorState {
             this.heldKeys.splice(this.heldKeys.indexOf('Alt'), 1)
 
         this.updateCursor()
+        this.updateInputs()
     }
 
     /**
