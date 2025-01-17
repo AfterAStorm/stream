@@ -469,6 +469,7 @@ export class EditorState {
     handleRotate() {
         this.selectedNodes.forEach(node => {
             node.rotation = (node.rotation + 90) % 360
+            node.invalidate()
         })
     }
 
