@@ -756,22 +756,23 @@ export class EditorState {
                 div.innerHTML = `<img width="40" height="40"
     src="${nd.icon.replace('$assets', `../../flows/${flow.id}/assets`)}"><span>${nd.display}</span>`
 
-                const bind = this.keybinds.move
                 const create = () => {
                     this.creatingNode = new nd()
                     this.creatingNode.position[0] = -100000000000
                     this.editor.flow.nodes.push(this.creatingNode)
                     this.selectNodes([this.creatingNode])
                 }
+                
+                const bind = this.keybinds.move
 
-                div.addEventListener('pointerdown', e => {
-                    if (bind.isMouse() && (bind.code & e.buttons) != 0) {
+                document.addEventListener('pointerdown', e => {
+                    if (div.matches(':hover') && bind.isMouse() && (bind.code & e.buttons) != 0) {
                         create()
                     }
                 })
 
-                div.addEventListener('keydown', e => {
-                    if (bind.isMouse() && bind.code == e.code.toLowerCase()) {
+                document.addEventListener('keydown', e => {
+                    if (div.matches(':hover') && !bind.isMouse() && bind.code == e.code.toLowerCase()) {
                         create()
                     }
                 })
