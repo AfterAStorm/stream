@@ -795,8 +795,8 @@ export class EditorState {
     handleSave = (download) => {
         const data = this.editor.save()
         if (download) {
-            const data = new Blob([data], {type: 'text/plain'})
-            const url = URL.createObjectURL(data)
+            const blob = new Blob([data], {type: 'text/plain'})
+            const url = URL.createObjectURL(blob)
             const link = document.createElement('a')
             link.href = url
             link.download = "saved.flow"
