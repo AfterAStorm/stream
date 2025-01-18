@@ -120,9 +120,9 @@ class Editor {
             const size = point.node.getSize()
             const rotation = point.node.rotation
             context.translate(...point.node.position)
-            context.translate(size[0] / 2, size[1] / 2)
-            context.rotate(-rotation * (Math.PI / 180))
-            context.translate(-size[0] / 2, -size[1] / 2)
+            //context.translate(size[0] / 2, size[1] / 2)
+            //context.rotate(-rotation * (Math.PI / 180))
+            //context.translate(-size[0] / 2, -size[1] / 2)
 
             context.beginPath()
             context.arc(...point.position, 7, 0, Math.PI * 2)
