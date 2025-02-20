@@ -169,6 +169,7 @@ export class Node extends BaseNode {
         const positions = []
         const offset = 10
         this.connectionPoints.forEach(p => { p.position = [0, 0]; p.active = false })
+
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
                 const point = this.getConnectionPoint(`#color${x + y * this.width}`)
@@ -176,8 +177,9 @@ export class Node extends BaseNode {
                     continue
                 point.active = true
                 point.tooltip = `Pixel ${x + 1}, ${y + 1}`
-                const yPos = offset + size[1] + (size[1] - offset * 2) * (y / (this.height - 1))
-                point.position = lerpV2([offset, yPos], [size[0] - offset, yPos], x / (this.width - 1))
+                const yPos = offset + size[1] + (size[1] - offset * 2) * (y / ((this.height > 1 ? this.height : 2) - 1) + (this.height > 1 ? 0 : .5))
+                var xMul = this.width > 1 ? x / (this.width - 1) : .5
+                point.position = lerpV2([offset, yPos], [size[0] - offset, yPos], xMul)
                 point.staticPosition = [...point.position]
                 if (this.rotation != 0) {
                     point.position = this.rotatePoint(...point.position, this.rotation)

@@ -495,17 +495,17 @@ export class EditorState {
                 .flatMap(node => this.editor.flow.getConnectionsTo(node))
                 .filter((node, index, array) => array.indexOf(node) == index)
             connections.forEach(connection => {
-                const nodeA = duplicates.find(nodes => (nodes[1] == connection.points[0].node))
-                const nodeB = duplicates.find(nodes => (nodes[1] == connection.points[1].node))
-                const dupe = new this.editor.flow.connectionDefinitions[connection.id](
+                const nodeA = duplicates.find(nodes => (nodes[1] == connection.points[0].node)) ?? [connection.points[0].node]
+                const nodeB = duplicates.find(nodes => (nodes[1] == connection.points[1].node)) ?? [connection.points[1].node]
+                const dupec = new this.editor.flow.connectionDefinitions[connection.id](
                     nodeA[0].getConnectionPoint(connection.points[0].id),
                     nodeB[0].getConnectionPoint(connection.points[1].id),
                 )
-                dupe.color = connection.color
+                dupec.color = connection.color
                 for (let i = 0; i < connection.visualPoints.length; i++) {
-                    dupe.addPoint(connection.visualPoints[i][0] + 25, connection.visualPoints[i][1] + 25)
+                    dupec.addPoint(connection.visualPoints[i][0] + 25, connection.visualPoints[i][1] + 25)
                 }
-                this.editor.flow.connections.push(dupe)
+                this.editor.flow.connections.push(dupec)
             })
             this.selectNodes(duplicates.map(d => d[0]))
         }
@@ -754,7 +754,7 @@ export class EditorState {
                 const div = document.createElement('div')
                 div.classList.add('category-item')
                 div.innerHTML = `<img width="40" height="40"
-    src="${nd.icon.replace('$assets', `../../flows/${flow.id}/assets`)}"><span>${nd.display}</span>`
+    src="${this.parsePath(nd.icon)}"><span>${nd.display}</span>`
 
                 const create = () => {
                     this.creatingNode = new nd()
@@ -787,6 +787,11 @@ export class EditorState {
                 items.classList.toggle('minimized', !toggle)
             })
         })
+    }
+
+    parsePath(path) {
+        const flow = this.editor.flow
+        return path.replace('$assets', `../../flows/${flow.id}/assets`)
     }
 
     /**

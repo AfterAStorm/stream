@@ -57,7 +57,7 @@ export class Node extends BaseNode {
 
         // output
         const currentOutput = this.getLocalConnectionPointValue('#result')
-        var setOutput = this._math(this.getConnectionPointValue('#left'), this.getConnectionPointValue('#right'))
+        var setOutput = Math.max(this._math(this.getConnectionPointValue('#left'), this.getConnectionPointValue('#right')), 0)
         if (Number.isNaN(setOutput))
             setOutput = 0
         
