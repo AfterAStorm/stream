@@ -724,6 +724,21 @@ export class EditorState {
         this.heldKeys = []
     }
 
+    onSearchChanged = () => {
+        const text = this.searchBox.value
+        if (text.length == 0) {
+            this.searchItems.forEach(div => {
+                div.classList.toggle('search-hidden', false)
+            })
+        }
+        else {
+            this.searchItems.forEach(div => {
+                const hidden = !div.querySelector('span').innerText.toLowerCase().includes(text.toLowerCase())
+                div.classList.toggle('search-hidden', hidden)
+            })
+        }
+    }
+
     onFlowLoad = () => {
         const sidebar = document.querySelector('#sidebar')
         const flow = this.editor.flow
@@ -731,6 +746,21 @@ export class EditorState {
         while (sidebar.firstChild)
             sidebar.removeChild(sidebar.lastChild)
 
+        const search = document.createElement('div')
+        const searchBox = document.createElement('input')
+        this.searchBox = searchBox
+        searchBox.addEventListener('input', () => this.onSearchChanged())
+        this.searchItems = []
+
+        searchBox.type = 'search'
+        searchBox.autocapitalize = 'no'
+        searchBox.autocomplete = 'no'
+        searchBox.placeholder = 'Search...'
+
+        search.classList.add('category')
+        search.appendChild(searchBox)
+        sidebar.appendChild(search)
+        
         const categories = Object.values(flow.nodeDefinitions)
             .map(nd => nd.category)
             .filter((val, ind, arr) => arr.indexOf(val) == ind)
@@ -777,6 +807,7 @@ export class EditorState {
                     }
                 })
 
+                this.searchItems.push(div)
                 items.appendChild(div)
                 categoryElements.push(div)
             })

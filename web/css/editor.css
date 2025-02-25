@@ -7,6 +7,7 @@ html, body {
 * {
     margin: 0;
     padding: 0;
+    border: none;
 }
 
 /* dialog styling */
@@ -102,9 +103,35 @@ dialog {
     font-family: monospace;
     padding-left: 2px;
     cursor: pointer;
+    position: relative;
 }
 
-.minimized {
+.category:has(input) {
+    position: sticky;
+    top: 0;
+    background-color: #837ca8;
+    padding-right: 2px;
+    z-index: 2;
+}
+
+input[type=search] {
+    background-color: transparent;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    text-align: left;
+    font-size: 20px;
+    font-family: monospace;
+    color: #fff;
+    outline: none;
+}
+
+input[type=search]::placeholder {
+    color: #000;
+}
+
+input[type=search]::-webkit-search-cancel-button {
     display: none;
 }
 
@@ -129,6 +156,10 @@ dialog {
 
 .category-item > img {
     object-fit: contain; /* make images not stretch */
+}
+
+.minimized, .search-hidden {
+    display: none;
 }
 
 /* chart styling */
