@@ -69,7 +69,16 @@ export class Node extends BaseNode {
         const height = size[1] - 50
 
         if (this.isHoveringRectangle(pos, centerX - width / 2, centerY - height / 2, width, height)) {
-            const percent = (pos[0] - (size[0] - width) / 2) / width
+            var basis = 0
+            if (this.rotation == 0)
+                basis = pos[0]
+            else if (this.rotation == 90)
+                basis = pos[1] + width / 2 - 10
+            else if (this.rotation == 180)
+                basis = width - pos[0] + 50
+            else if (this.rotation == 270)
+                basis = -(pos[1] - width) - 40
+            const percent = (basis - (size[0] - width) / 2) / width
             const rounded = Math.round(percent * 10)
             if (this.value == rounded)
                 return // didn't change
