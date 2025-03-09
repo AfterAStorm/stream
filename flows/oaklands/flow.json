@@ -14,6 +14,7 @@
 
         "input/switch",
         "input/button",
+        "input/slider",
         "input/joystick",
         "input/number_interface",
         "input/hertz_clock",
