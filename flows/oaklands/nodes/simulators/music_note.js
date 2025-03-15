@@ -96,7 +96,8 @@ export class Node extends BaseNode {
             if (pitch > 0) {
                 this.play_cooldown = true
                 const clampedPitch = Math.max(Math.min(pitch, 25), 1)
-                this.sounds[this.instrument - 1].playNext(Math.pow(2, (pitch - 13) / 12))
+                console.log(clampedPitch)
+                this.sounds[this.instrument - 1].playNext(Math.pow(2, (clampedPitch - 13) / 12))
             }
         }
         else {
