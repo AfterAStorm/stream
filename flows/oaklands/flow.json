@@ -57,7 +57,11 @@
         "simulators/donator",
         "simulators/transmitter",
         "simulators/receiver",
-        "simulators/weather_sensor"
+        "simulators/weather_sensor",
+        "simulators/owner",
+        "simulators/proximity_sensor",
+        "simulators/chat",
+        "simulators/music_note"
     ],
 
     "updateSpeed": 0.03333333333

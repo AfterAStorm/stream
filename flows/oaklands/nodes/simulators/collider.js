@@ -19,7 +19,7 @@ export class Node extends BaseNode {
 
     constructor() {
         super()
-        this.addConnectionPoint('input', 'left', '#input', 'Interact, different devices handle interactors differently')
+        this.addConnectionPoint('input', 'left', '#input', 'Collide, enable and disable collisions with filled schematics, privacy glass, vehicle/trailer pads, and spawn pads.')
     }
 
     /**

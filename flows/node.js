@@ -295,10 +295,10 @@ export class BaseNode {
         })
     }
 
-    async getUserSelectionInput(values, index=0) {
+    async getUserSelectionInput(values, val=0) { // values is STRING: NUMBER
         const modal = document.getElementById('select-input')
         const modalValue = document.getElementById('select-input-value')
-        modalValue.innerHTML = values.map((value, i) => `<option value="${value}"${index == i ? ' selected' : ''}>${value}</option>`).join('')
+        modalValue.innerHTML = Object.entries(values).map((entry) => `<option value="${entry[1]}"${entry[1] == val ? ' selected' : ''}>${entry[0]}</option>`).join('')
         setTimeout(() => {
             modal.showModal()
         }, 75)

@@ -11,27 +11,24 @@ function lerpV3(a, b, t) {
 }
 
 const NAMES = {
-    'Clear': 1,
-    'Cloudy': 2,
-    'Rainy': 3,
-    'Thunderstorm': 4,
-    'Aurora Borealis': 5,
-    'Star Rain': 6
+    'Select': 0,
+    'Visitor': 1,
+    'Owner': 10,
 }
 
 export class Node extends BaseNode {
-    static id         = "weather_sensor"
-    static display    = "Weather Sensor"
+    static id         = "chat_commander"
+    static display    = "Chat Commander"
     static size       = [.75, .75]
     static icon       = "$assets/unknown.png"
     static category   = "simulators"
 
     constructor() {
         super()
-        this.addConnectionPoint('output', 'right', '#result', 'Sends a signal based on the weather\n' + Object.entries(NAMES).map(pair => `**Output ⚡ ${pair[1]} = ${pair[0]}`).join('\n'))
-        this.setConnectionPointValue('#result', 1)
+        this.addConnectionPoint('output', 'right', '#result', 'Sends a signal based on chat messages\n' + Object.entries(NAMES).filter(x => x[1] > 0).map(pair => `**Output ⚡ ${pair[1]} = ${pair[0]}`).join('\n'))
+        this.setConnectionPointValue('#result', 0)
 
-        this.value = 1
+        this.value = 0
     }
 
     serialize() {
@@ -42,7 +39,7 @@ export class Node extends BaseNode {
 
     deserialize(data) {
         super.deserialize(data)
-        this.value = data.value ?? 1
+        this.value = data.value ?? 0
         this.setConnectionPointValue('#result', this.value)
     }
 
@@ -70,10 +67,11 @@ export class Node extends BaseNode {
             this.cooldown = true
             this.getUserSelectionInput(NAMES, this.value).then(v => {
                 this.value = v || this.value
-                this.setConnectionPointValue('#result', 0)
+                this.setConnectionPointValue('#result', this.value)
                 this.schedule(() => {
+                    this.value = 0
                     this.setConnectionPointValue('#result', this.value)
-                }, 0)
+                }, 1)
             })
         }
     }

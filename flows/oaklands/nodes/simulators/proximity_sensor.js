@@ -11,27 +11,25 @@ function lerpV3(a, b, t) {
 }
 
 const NAMES = {
-    'Clear': 1,
-    'Cloudy': 2,
-    'Rainy': 3,
-    'Thunderstorm': 4,
-    'Aurora Borealis': 5,
-    'Star Rain': 6
+    'None': 0,
+    'Visitor': 1,
+    'Trusted': 5,
+    'Owner': 10
 }
 
 export class Node extends BaseNode {
-    static id         = "weather_sensor"
-    static display    = "Weather Sensor"
+    static id         = "proximity_sensor"
+    static display    = "Proximity Sensor"
     static size       = [.75, .75]
     static icon       = "$assets/unknown.png"
     static category   = "simulators"
 
     constructor() {
         super()
-        this.addConnectionPoint('output', 'right', '#result', 'Sends a signal based on the weather\n' + Object.entries(NAMES).map(pair => `**Output ⚡ ${pair[1]} = ${pair[0]}`).join('\n'))
-        this.setConnectionPointValue('#result', 1)
+        this.addConnectionPoint('output', 'right', '#result', 'Sends a signal based on a player\'s proximity.\n' + Object.entries(NAMES).map(pair => `**Output ⚡ ${pair[1]} = ${pair[0]}`).join('\n'))
+        this.setConnectionPointValue('#result', 0)
 
-        this.value = 1
+        this.value = 0
     }
 
     serialize() {
@@ -42,7 +40,7 @@ export class Node extends BaseNode {
 
     deserialize(data) {
         super.deserialize(data)
-        this.value = data.value ?? 1
+        this.value = data.value ?? 0
         this.setConnectionPointValue('#result', this.value)
     }
 
