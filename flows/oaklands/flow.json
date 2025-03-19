@@ -61,7 +61,8 @@
         "simulators/owner",
         "simulators/proximity_sensor",
         "simulators/chat",
-        "simulators/music_note"
+        "simulators/music_note",
+        "simulators/speaker"
     ],
 
     "updateSpeed": 0.03333333333

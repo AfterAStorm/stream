@@ -123,6 +123,7 @@ export class Node extends BaseNode {
             this.cooldown = true
             this.getUserSelectionInput(NAMES, this.instrument).then(v => {
                 this.instrument = v || this.instrument
+                this.invalidate()
             })
         }
     }
