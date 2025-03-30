@@ -844,7 +844,7 @@ export class EditorState {
             const url = URL.createObjectURL(blob)
             const link = document.createElement('a')
             link.href = url
-            link.download = `${this.fileNameArea.value}.flow`
+            link.download = `${this.fileNameArea.value.length > 0 ? this.fileNameArea.value : "Unnamed Flow"}.flow`
             document.body.appendChild(link)
             link.click()
             link.remove()
