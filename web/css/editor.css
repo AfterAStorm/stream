@@ -40,6 +40,29 @@ dialog {
     font-size: 30px;
 }
 
+#file-name {
+    width: 50%;
+    margin-left: 10px;
+    resize: none;
+    align-self: center;
+    height: 100%;
+    overflow: hidden;
+    text-align: left;
+    padding-top: calc(50px - 1.5rem);
+    font-size: 1.5rem;
+    background-color: transparent;
+    outline: none;
+    color: #333;
+    font-family: monospace;
+    font-weight: lighter;
+    white-space: nowrap;
+}
+
+#file-name::placeholder {
+    font-style: italic;
+    color: #333;
+}
+
 #buttons {
     margin-left: auto;
     margin-right: 5px;

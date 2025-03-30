@@ -96,7 +96,7 @@ export class Connection {
 
             const approxDist = fromDist + toDist
             const lineDist = distV2(subV2(from, to))
-            if (Math.abs(approxDist - lineDist) < 3)
+            if (Math.abs(approxDist - lineDist) < .15)
                 return i - 1
         }
         return null

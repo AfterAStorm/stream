@@ -42,7 +42,7 @@ class ConnectionPoint {
         if (this.position == null)
             return false
         const relative = this.node.getRelative(x, y)
-        return distV2(subV2(relative, this.position)) <= 12//7
+        return distV2(subV2(relative, this.position)) <= 7
     }
 }
 

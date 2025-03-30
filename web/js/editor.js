@@ -241,6 +241,7 @@ async function main() {
     }
     else if (flowId != null) {
         if (exampleName != null) {
+            document.querySelector('#file-name').innerHTML = exampleName
             fetch(`../../flows/${flowId}/examples/${exampleName}.flow`).then(r => r.text()).then(data => editor.load(data))
         }
         else {

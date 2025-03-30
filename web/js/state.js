@@ -138,11 +138,18 @@ export class EditorState {
         this.pan = data.pan || this.pan
         this.scale = data.scale || this.scale
     }
-
+    
     canSelect() {
-        if (this.interactionModeCheckbox && this.interactionModeCheckbox.checked)
-            return false
-        return true
+        //if (this.interactionModeCheckbox && this.interactionModeCheckbox.checked)
+        return ['all', 'organize'].includes(this.mode.value)
+    }
+    
+    canConnect() {
+        return ['all', 'connect'].includes(this.mode.value)
+    }
+    
+    canInteract() {
+        return ['all', 'interact'].includes(this.mode.value)
     }
 
     updateKeybinds() {
@@ -299,7 +306,7 @@ export class EditorState {
             this.selectionStart = [...this.position]
             this.primaryPressed = false
         }
-        else if (points.length > 0 && this.selectedNodes.length == 0 && this.canSelect()) {
+        else if (points.length > 0 && this.selectedNodes.length == 0 && this.canConnect()) {
             if (this.isKeyHeld('Alt') && this.creatingConnection == null) {
                 points.forEach(point => {
                     if (!this.selectedPoints.includes(point))
@@ -365,7 +372,7 @@ export class EditorState {
                 }
             }
         }
-        else if (connections.length > 0 && this.selectedNodes.length == 0 && this.canSelect()) {
+        else if (connections.length > 0 && this.selectedNodes.length == 0 && this.canConnect()) {
             const connection = connections[0]
             const subpointIndex = connection.getHoveringSubPoint(...this.position)
             if (subpointIndex != null) {
@@ -387,19 +394,21 @@ export class EditorState {
                 this.position[1] * (1 / this.scale) - this.pan[1]
             ]) // add a point
         }
-        else if (nodes.length > 0) { // try to select nodes
+        else if (nodes.length > 0 && this.canSelect()) { // try to select nodes
             // copy list/create new one
             let currentlySelectedNodes = [...this.selectedNodes]
             // go through each node and perform some checks depending on keys pressed
+            const multiSelectEnabled = this.isKeyHeld('Shift')
+            if (!multiSelectEnabled && currentlySelectedNodes.some((node, i, a) => currentlySelectedNodes.includes(node)))
+                return // nothing changed
             nodes.forEach(node => {
                 const includes = currentlySelectedNodes.includes(node)
-                const mutliSelectEnabled = this.isKeyHeld('Shift')
-                if (includes && mutliSelectEnabled) {
+                if (includes && multiSelectEnabled) {
                     // remove
                     currentlySelectedNodes.splice(currentlySelectedNodes.indexOf(node), 1)
                 }
                 else if (!includes) {
-                    if (mutliSelectEnabled)
+                    if (multiSelectEnabled)
                         currentlySelectedNodes.push(node)
                     else
                         currentlySelectedNodes = [node]
@@ -835,7 +844,7 @@ export class EditorState {
             const url = URL.createObjectURL(blob)
             const link = document.createElement('a')
             link.href = url
-            link.download = "saved.flow"
+            link.download = `${this.fileNameArea.value}.flow`
             document.body.appendChild(link)
             link.click()
             link.remove()
@@ -865,7 +874,17 @@ export class EditorState {
         canvas.addEventListener('wheel', this.onWheel)
         window.addEventListener('blur', this.onBlur)
         
-        this.interactionModeCheckbox = document.getElementById('interaction-mode')
+        //this.interactionModeCheckbox = document.getElementById('interaction-mode')
+        this.mode = document.querySelector('#mode-select')
+
+        this.fileNameArea = document.querySelector('#file-name')
+        this.fileNameArea.addEventListener('input', () => {
+            if (!this.fileNameArea.value.includes('\n')) {
+                return
+            }
+            this.fileNameArea.value = this.fileNameArea.value.replace('\n', '')
+            this.fileNameArea.blur() // deselect
+        })
 
         const connectionColorInput = document.querySelector('#connection-color')
         document.querySelector('#connection-colors').querySelectorAll('div > div').forEach(div => {
@@ -891,6 +910,7 @@ export class EditorState {
         {
             fileUpload.addEventListener('change', () => {
                 if (fileUpload.files.length) {
+                    this.fileNameArea.value = fileUpload.files[0].name.replace(/\.flow$/g, '')
                     fileUpload.files[0].text().then(data => {
                         this.editor.load(data)
                     })

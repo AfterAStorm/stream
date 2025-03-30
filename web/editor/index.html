@@ -154,6 +154,7 @@
         </dialog>
         <nav id="topbar">
             <h2>stream</h2>
+            <textarea id="file-name" rows="1" placeholder="Unnamed Flow" autocomplete="off" spellcheck="false"></textarea>
             <div id="buttons">
                 <button id="upload" class="button">
                     <span class="icon material-symbols-outlined">upload</span>
@@ -259,7 +260,13 @@
                     </div>
                     <input value="#ff0000" type="color" id="connection-color">
                 </div>
-                <div style="margin-top: 1rem;"><span>Interaction Mode:</span><input id="interaction-mode" type="checkbox"></div>
+                <div style="margin-top: 1rem;"><span>Mode:</span><select id="mode-select">
+                    <option value="all">All</option>
+                    <option value="organize">Organize</option>
+                    <option value="connect">Connect</option>
+                    <option value="interact">Interact</option>
+                </select></div>
+                <!--<div style="margin-top: 1rem;"><span>Interaction Mode:</span><input id="interaction-mode" type="checkbox"></div>-->
                 <div><button id="edit-toggle">&lt;</button></div>
             </div>
         </div>
