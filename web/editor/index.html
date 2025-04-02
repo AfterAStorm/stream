@@ -48,13 +48,27 @@
                 <h2>Disclaimer</h2>
                 <p>This is merely a simulation of a simulation, and results in-game are not guaranteed to be accurate with results here.</p>
                 <h3>Basics</h3>
-                <p>To add a node, drag it from the list on the left.</p>
-                <p>To connect nodes, click their connection points; intermediate points will be extra points for visual effect.</p>
-                <p>To see a points purpose and status, hover over it; same goes for connections</p>
+                <div class="desktop">
+                    <p>To add a node, drag it from the list on the left.</p>
+                    <p>To connect nodes, click their connection points; intermediate points are extra for visual effect.</p>
+                    <p>To see a points purpose and status, hover over it; same goes for connections.</p>
+                </div>
+                <div class="mobile">
+                    <p>To add a node, tap on it in the list on the left and tap anywhere on the flow to add it.</p>
+                    <p>To connect nodes, tap their connection points; intermediate points are extra for visual effect.</p>
+                    <p>To see a points purpose and status, enter interaction mode and tap it.</p>
+                </div>
                 <h3>Nodes</h3>
-                <p>To select a node, click it anywhere (excluding select interactable parts); hold shift to select multiple</p>
-                <p>To drag nodes, select them and drag them</p>
-                <p>To delete a node, select it/them and right click one of them</p>
+                <div class="desktop">
+                    <p>To select a node, click it anywhere (excluding select interactable parts if in the appropriate mode); hold shift to select multiple.</p>
+                    <p>To drag nodes, select them and drag them.</p>
+                    <p>To delete a node, select it/them and right click one of them.</p>
+                </div>
+                <div class="mobile">
+                    <p>To select a node, tap it anywhere (excluding select interactable parts if in the appropriate mode).</p>
+                    <p>To drag nodes, select them and drag them.</p>
+                    <p>To delete a node, select it/them and drag them into the list of the left.</p>
+                </div>
                 <h3>Saving & Sharing</h3>
                 <p>To save or share your creation, click the <span class="material-symbols-outlined">save</span> icon in the top right.</p>
                 <p>To view some examples, click the <span class="material-symbols-outlined">topic</span> icon in the top right.</p>
@@ -129,6 +143,7 @@
                 <h1>settings</h1>
                 <p>Click to change a keybind.</p>
                 <h3 id="keybinds">keybinds</h3>
+                <p class="mobile">You cannot have keybinds, you goob!</p>
                 <h3>other</h3>
                 <br />
                 <button>Close</button>
@@ -153,43 +168,51 @@
             </form>
         </dialog>
         <nav id="topbar">
-            <h2>stream</h2>
-            <textarea id="file-name" rows="1" placeholder="Unnamed Flow" autocomplete="off" spellcheck="false"></textarea>
+            <div id="heading">
+                <h2>stream</h2>
+                <textarea id="file-name" rows="1" placeholder="Unnamed Flow" autocomplete="off" spellcheck="false"></textarea>
+            </div>
             <div id="buttons">
-                <button id="upload" class="button">
-                    <span class="icon material-symbols-outlined">upload</span>
-                    <span class="tooltip">Upload</span>
+                <button id="hamburger" class="button">
+                    <span class="icon material-symbols-outlined">menu</span>
                 </button>
-                <button id="download" class="button">
-                    <span class="icon material-symbols-outlined">download</span>
-                    <span class="tooltip">Download</span>
-                </button>
-                <input id="file" type="file" accept=".flow" hidden />
-                <button id="save" class="button">
-                    <span class="icon material-symbols-outlined">save</span>
-                    <span class="tooltip">Save</span>
-                </button>
-                <button id="examples" class="button">
-                    <span class="icon material-symbols-outlined">topic</span>
-                    <span class="tooltip">Examples</span>
-                </button>
-                <button id="summary" class="button">
-                    <span class="icon material-symbols-outlined">summarize</span>
-                    <span class="tooltip">Summary</span>
-                </button>
-                <button id="help" class="button">
-                    <span class="icon material-symbols-outlined">help</span>
-                    <span class="tooltip">Help</span>
-                </button>
-                <button id="settings" class="button">
-                    <span class="icon material-symbols-outlined">settings</span>
-                    <span class="tooltip">Settings</span>
-                </button>
-                <button id="fullscreen" class="button">
-                    <span class="icon material-symbols-outlined">fullscreen</span>
-                </button>
+                <ul id="buttons-list">
+                    <li><button id="upload" class="button">
+                        <span class="icon material-symbols-outlined">upload</span>
+                        <span class="tooltip">Upload</span>
+                    </button></li>
+                    <li><button id="download" class="button">
+                        <span class="icon material-symbols-outlined">download</span>
+                        <span class="tooltip">Download</span>
+                    </button></li>
+                    <li><button id="save" class="button">
+                        <span class="icon material-symbols-outlined">save</span>
+                        <span class="tooltip">Save</span>
+                    </button></li>
+                    <li><button id="examples" class="button">
+                        <span class="icon material-symbols-outlined">topic</span>
+                        <span class="tooltip">Examples</span>
+                    </button></li>
+                    <li><button id="summary" class="button">
+                        <span class="icon material-symbols-outlined">summarize</span>
+                        <span class="tooltip">Summary</span>
+                    </button></li>
+                    <li><button id="help" class="button">
+                        <span class="icon material-symbols-outlined">help</span>
+                        <span class="tooltip">Help</span>
+                    </button></li>
+                    <li><button id="settings" class="button">
+                        <span class="icon material-symbols-outlined">settings</span>
+                        <span class="tooltip">Settings</span>
+                    </button></li>
+                    <li><button id="fullscreen" class="button">
+                        <span class="icon material-symbols-outlined">fullscreen</span>
+                        <span class="tooltip">Fullscreen</span>
+                    </button></li>
+                </ul>
             </div>
         </nav>
+        <input id="file" type="file" accept=".flow" hidden />
         <div id="content">
             <div id="sidebar">
                 <!--<div class="category"><input type="search" autocapitalize="no" autocomplete="no" id="search"></div>-->
@@ -265,7 +288,7 @@
                     <option value="organize">Organize</option>
                     <option value="connect">Connect</option>
                     <option value="interact">Interact</option>
-                </select></div>
+                </select><label class="mobile" for="mode-delete"> | Delete</label><input id="mode-delete" class="mobile" type="checkbox"></div>
                 <!--<div style="margin-top: 1rem;"><span>Interaction Mode:</span><input id="interaction-mode" type="checkbox"></div>-->
                 <div><button id="edit-toggle">&lt;</button></div>
             </div>

@@ -1,7 +1,24 @@
+
+/* theme */
+
+:root {
+    --theme-topbar: #bfb3ff;
+}
+
 /* editor */
 
 html, body {
+    width: 100%;
     height: 100%;
+    overflow: hidden;
+}
+
+html {
+    position: fixed;
+}
+
+body {
+    position: relative;
 }
 
 * {
@@ -13,7 +30,7 @@ html, body {
 /* dialog styling */
 
 dialog {
-    position: absolute;
+    /*position: absolute;*/
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -27,13 +44,21 @@ dialog {
 
 #topbar {
     height: 50px;
-    background-color: #bfb3ff;
-    padding: 0 5px 0 5px;
+    background-color: var(--theme-topbar);
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    width: 100%;
 }
 
-#topbar > h2 {
+#heading {
+    margin-left: 5px;
+    display: flex;
+    align-items: center;
+    width: fit-content;
+}
+
+#heading > h2 {
     width: fit-content;
     align-self: center;
     font-family: monospace;
@@ -41,14 +66,12 @@ dialog {
 }
 
 #file-name {
-    width: 50%;
+    width: fit-content;
     margin-left: 10px;
     resize: none;
-    align-self: center;
     height: 100%;
     overflow: hidden;
     text-align: left;
-    padding-top: calc(50px - 1.5rem);
     font-size: 1.5rem;
     background-color: transparent;
     outline: none;
@@ -64,8 +87,16 @@ dialog {
 }
 
 #buttons {
-    margin-left: auto;
     margin-right: 5px;
+    position: relative;
+}
+
+#buttons-list > li {
+    display: inline-block;
+}
+
+#hamburger {
+    display: none;
 }
 
 .button {
@@ -116,6 +147,16 @@ dialog {
     flex-shrink: 0; /* prevent flexbox taking over */
     overflow-y: auto;
     overflow-x: hidden;
+}
+
+/* holy cow this sucks */
+/* but is the easiest option i found quickly */
+.sidebar-minimized > #sidebar {
+    display: none;
+}
+
+.sidebar-minimized > #edit-options {
+    left: 0px;
 }
 
 .category {
@@ -303,7 +344,7 @@ p {
 
 /* media conditions */
 
-@media screen and (max-width: 980px) {
+/*@media screen and (max-width: 980px) {
     #sidebar, #buttons {
         display: none;
     }
@@ -313,4 +354,65 @@ p {
     #edit-options {
         display: none;
     }
+}*/
+
+.desktop {
+    display: initial;
+}
+
+.mobile {
+    display: none;
+}
+
+@media only screen and (max-width: 980px), only screen and (max-height: 300px) {
+    .desktop {
+        display: none !important;
+    }
+    
+    .mobile {
+        display: initial !important;
+    }
+
+    #buttons-list {
+        position: absolute;
+        right: 0px;
+        top: 40px;
+        background-color: var(--theme-topbar);
+        display: none;
+        z-index: 2;
+    }
+    
+    .opened {
+        display: block !important;
+    }
+
+    .tooltip {
+        text-align: right;
+        display: block;
+        left: unset;
+        right: 100%;
+        top: 0;
+        transform: translate(-5px, 25%);
+        text-shadow: #fff 0px 0px 5px;
+    }
+
+    #buttons-list > li {
+        display: block;
+    }
+
+    #hamburger {
+        display: inline-block;
+    }
+    
+    dialog {
+        width: 100%;
+    }
+
+    /*dialog {
+        z-index: 3;
+        max-width: 100%;
+        max-height: 70%;
+        overflow-y: scroll;
+        overflow-x: hidden;
+    }*/
 }

@@ -85,6 +85,7 @@ export class Connection {
         if (this.b && this.b.position)
             plotPoints.push(addV2(this.b.position, this.b.node.position))
 
+        const range = this.editor != null ? (this.editor.inputType == 'touch' ? .35 : .25) : .25
         for (let i = 1; i < plotPoints.length; i++) {
             const from = plotPoints[i - 1]
             const to = plotPoints[i]
@@ -96,7 +97,7 @@ export class Connection {
 
             const approxDist = fromDist + toDist
             const lineDist = distV2(subV2(from, to))
-            if (Math.abs(approxDist - lineDist) < .15)
+            if (Math.abs(approxDist - lineDist) < .25)
                 return i - 1
         }
         return null

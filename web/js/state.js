@@ -102,6 +102,9 @@ export class EditorState {
             'lasso':        new Keybind('select multiple nodes all at once', 'controlleft')
         }
 
+        this.inputType = 'mouse'
+        this.lastPinchDistance = null
+
         // history //
 
         this.history = [] // history stack
@@ -302,6 +305,16 @@ export class EditorState {
         // node
         // conncetion
 
+        if (this.creatingNode != null && this.inputType == 'touch') {
+            // special behavior for mobile
+            this.selectNodes([this.creatingNode])
+            this.handleDrag()
+            return
+        }
+        if (this.selectedSubPoints.length > 0 && this.inputType == 'touch') {
+            this.selectedSubPoints = []
+            this.selectedConnections = []
+        }
         if (this.isKeybindHeld('lasso')) { // multi-drag/select
             this.selectionStart = [...this.position]
             this.primaryPressed = false
@@ -387,6 +400,13 @@ export class EditorState {
                 connection.visualPoints.splice(segment, 0, connection.getRelative(0, 0, ...this.position))
                 this.selectedSubPoints = [[connection, segment]]
             }
+            if (this.deleteMode.checked) {
+                this.selectedConnections.forEach(c => {
+                    this.flow.cutConnection(c)
+                })
+                this.selectedConnections = []
+                this.selectedSubPoints = []
+            }
         }
         else if (this.creatingConnection != null) {
             this.creatingConnection.visualPoints.push([
@@ -398,7 +418,7 @@ export class EditorState {
             // copy list/create new one
             let currentlySelectedNodes = [...this.selectedNodes]
             // go through each node and perform some checks depending on keys pressed
-            const multiSelectEnabled = this.isKeyHeld('Shift')
+            const multiSelectEnabled = this.inputType == 'touch' || this.isKeyHeld('Shift') // always multi-select with touch
             if (!multiSelectEnabled && currentlySelectedNodes.some((node, i, a) => currentlySelectedNodes.includes(node)))
                 return // nothing changed
             nodes.forEach(node => {
@@ -419,6 +439,8 @@ export class EditorState {
                 this.selectNodes([])
             else
                 this.selectNodes(currentlySelectedNodes)
+            if (this.deleteMode.checked)
+                this.handleDelete()
         }
         else {
             this.selectNodes([])
@@ -472,6 +494,9 @@ export class EditorState {
                 connections: removedConnections,
                 subpoints: removedSubpoints
             })
+            this.selectedSubPoints = []
+            this.selectedConnections = []
+            this.selectNodes([])
         }
     }
 
@@ -590,7 +615,7 @@ export class EditorState {
             this.handleLasso()
         }
 
-        if (this.creatingNode != null && !this.isKeybindHeld('move')) {
+        if (this.creatingNode != null && !this.isKeybindHeld('move') && this.inputType != 'touch') {
             this.selectNodes([])
             this.flow.removeNode(this.creatingNode)
             this.creatingNode = null
@@ -601,6 +626,7 @@ export class EditorState {
      * @param {PointerEvent} event 
      */
     onPointerDown = (event) => {
+        this.inputType = event.pointerType
         this.position = [event.offsetX, event.offsetY]
 
         this.primaryPressed = (event.buttons & 1) != 0
@@ -623,11 +649,13 @@ export class EditorState {
      * @param {PointerEvent} event 
      */
     onPointerMove = (event) => {
+        if (event.pointerType == 'touch')
+            return
         this.positionDelta = [event.offsetX - this.position[0], event.offsetY - this.position[1]]
         this.position = [event.offsetX, event.offsetY]
 
         this.handleHover()
-        if (this.isKeybindHeld('pan')) {
+        if (this.isKeybindHeld('pan') || (this.selectedNodes.length == 0 && event.pointerType == 'touch')) {
             this.handlePan()
         }
         if (this.isKeybindHeld('move') && this.selectionStart == null) {
@@ -639,6 +667,79 @@ export class EditorState {
             this.selectedSubPoints = []
         }
         this.handleCreating()
+    }
+
+    onTouchStart = (event) => {
+        this.onTouchMove(event)
+    }
+
+    onTouchMove = (event) => {
+        const touches = event.touches
+        this.positionDelta = [touches.item(0).clientX - (this.canSelect() ? 200 : 0) - this.position[0], touches.item(0).clientY - 50 - this.position[1]]
+        this.position = [touches.item(0).clientX - (this.canSelect() ? 200 : 0), touches.item(0).clientY - 50]
+
+        this.handleHover()
+
+        if (touches.length == 1) {
+            if ((this.selectedNodes.length > 0 || this.selectedConnections.length > 0 || this.selectedSubPoints.length > 0) && (this.creatingConnection == null))
+                this.handleDrag()
+            else
+                this.handlePan()
+            this.handleCreating()
+        }
+
+        if (touches.length != 2)
+            return
+
+        const distance = Math.sqrt(Math.pow(touches.item(0).screenX - touches.item(1).screenX, 2) + Math.pow(touches.item(0).screenY - touches.item(1).screenY, 2))
+        const difference = distance - this.lastPinchDistance
+        const xOffset = this.canSelect() ? 200 : 0
+        if (this.lastPinchDistance != null)
+            this.zoomOn(-difference, [(touches.item(0).clientX - xOffset + touches.item(1).clientX - xOffset) / 2, (touches.item(0).clientY - 50 + touches.item(1).clientY - 50) / 2], Math.abs(difference) * 5)
+        this.lastPinchDistance = distance
+    }
+
+    onTouchEnd = (event) => {
+        this.lastPinchDistance = null
+    }
+
+    onTouchDelete = (event) => {
+        if (!this.canSelect())
+            return
+        if (event.clientX > 200) {
+            return
+        }
+        if (this.selectedNodes.length > 0 && this.creatingNode == null) {
+            const connections = this.selectedNodes
+                        .flatMap(node => this.editor.flow.getConnectionsTo(node))
+                        .filter((node, index, array) => array.indexOf(node) == index)
+            this.selectedNodes.forEach(node => this.flow.removeNode(node))
+            this.addHistory('delete', {nodes: this.selectedNodes, connections: connections, subpoints: []})
+            this.selectNodes([])
+        }
+        if (this.selectedConnections.length > 0) {
+            const removedSubpoints = []
+            const removedConnections = []
+            this.selectedConnections.filter(c => c != this.creatingConnection).forEach(connection => {
+                const subpoint = connection.getHoveringSubPoint(...this.position)
+                if (subpoint != null) {
+                    const deleted = connection.visualPoints.splice(subpoint, 1)[0]
+                    removedSubpoints.push([connection, subpoint, deleted]) // conn, index, pos
+                }
+                else {
+                    this.flow.cutConnection(connection)
+                    removedConnections.push(connection)
+                }
+            })
+            this.addHistory('delete', {
+                nodes: [],
+                connections: removedConnections,
+                subpoints: removedSubpoints
+            })
+            this.selectedConnections = []
+            this.selectedPoints = []
+            this.selectedSubPoints = []
+        }
     }
 
     /**
@@ -709,20 +810,24 @@ export class EditorState {
         this.updateInputs()
     }
 
+    zoomOn(dir, position, amplitude=100) {
+        const direction = Math.sign(dir)
+        const lastScale = this.scale
+        this.scale *= 1 - (direction * amplitude) / 1000
+        if (this.scale <= 0.01)
+            this.scale = .01
+
+        const lastMouse = [position[0] / lastScale, position[1] / lastScale]
+        const newMouse = [position[0] / this.scale, position[1] / this.scale]
+        this.pan[0] += newMouse[0] - lastMouse[0]
+        this.pan[1] += newMouse[1] - lastMouse[1]
+    }
+
     /**
      * @param {WheelEvent} event 
      */
     onWheel = (event) => {
-        const direction = Math.sign(event.deltaY)
-        const lastScale = this.scale
-        this.scale *= 1 - (direction * 100) / 1000
-        if (this.scale <= 0.01)
-            this.scale = .01
-
-        const lastMouse = [this.position[0] / lastScale, this.position[1] / lastScale]
-        const newMouse = [this.position[0] / this.scale, this.position[1] / this.scale]
-        this.pan[0] += newMouse[0] - lastMouse[0]
-        this.pan[1] += newMouse[1] - lastMouse[1]
+        this.zoomOn(event.deltaY, this.position)
     }
 
     /**
@@ -796,6 +901,13 @@ export class EditorState {
     src="${this.parsePath(nd.icon)}"><span>${nd.display}</span>`
 
                 const create = () => {
+                    if (this.creatingNode != null) {
+                        this.selectNodes([])
+                        this.flow.removeNode(this.creatingNode)
+                        this.creatingNode = null
+                        return
+                    }
+                    console.warn('create')
                     this.creatingNode = new nd()
                     this.creatingNode.position[0] = -100000000000
                     this.editor.flow.nodes.push(this.creatingNode)
@@ -804,14 +916,19 @@ export class EditorState {
                 
                 const bind = this.keybinds.move
 
-                document.addEventListener('pointerdown', e => {
-                    if (div.matches(':hover') && bind.isMouse() && (bind.code & e.buttons) != 0) {
+                div.addEventListener('touchstart', e => {
+                    if (this.canSelect())
+                        create()
+                })
+
+                div.addEventListener('pointerdown', e => {
+                    if (this.canSelect() && div.matches(':hover') && bind.isMouse() && (bind.code & e.buttons) != 0) {
                         create()
                     }
                 })
 
-                document.addEventListener('keydown', e => {
-                    if (div.matches(':hover') && !bind.isMouse() && bind.code == e.code.toLowerCase()) {
+                div.addEventListener('keydown', e => {
+                    if (this.canSelect() && div.matches(':hover') && !bind.isMouse() && bind.code == e.code.toLowerCase()) {
                         create()
                     }
                 })
@@ -869,13 +986,26 @@ export class EditorState {
         document.addEventListener('pointerdown', this.onGlobalPointerDown)
         document.addEventListener('pointerup', this.onPointerUp)
         canvas.addEventListener('pointermove', this.onPointerMove)
+        canvas.addEventListener('touchstart', this.onTouchStart)
+        canvas.addEventListener('touchmove', this.onTouchMove)
+        canvas.addEventListener('touchend', this.onTouchEnd)
         document.addEventListener('keydown', this.onKeyDown)
         document.addEventListener('keyup', this.onKeyUp)
         canvas.addEventListener('wheel', this.onWheel)
         window.addEventListener('blur', this.onBlur)
-        
+
+        const sidebar = document.querySelector('#sidebar')
+        document.addEventListener('pointerup', this.onTouchDelete)
+
+        this.deleteMode = document.querySelector('#mode-delete')
+
         //this.interactionModeCheckbox = document.getElementById('interaction-mode')
         this.mode = document.querySelector('#mode-select')
+
+        const content = document.querySelector('#content')
+        this.mode.addEventListener('input', () => {
+            content.classList.toggle('sidebar-minimized', !['all', 'organize'].includes(this.mode.value))
+        })
 
         this.fileNameArea = document.querySelector('#file-name')
         this.fileNameArea.addEventListener('input', () => {
@@ -902,7 +1032,7 @@ export class EditorState {
         }
 
         const handleButton = (id, handler) => {
-            document.querySelector(`#${id}`).onclick = handler
+            document.querySelector(`#${id}`).addEventListener('pointerup', handler)
         }
 
         const fileUpload = document.querySelector('#file')
@@ -920,7 +1050,7 @@ export class EditorState {
         }
 
         handleButton('download', () => this.handleSave(true))
-        handleButton('save', () => this.handleSave(false))
+        handleButton('save', () => setTimeout(() => this.handleSave(false), 100))
 
         const exampleDialog = document.querySelector('#example-dialog')
         handleButton('examples', () => exampleDialog.showModal())
@@ -991,23 +1121,36 @@ export class EditorState {
                 const input = document.createElement('input')
                 input.type = 'button'
                 input.value = bind[1].getKey()
-                input.classList.add('keybind')
+                input.classList.add('keybind', 'desktop')
                 bind[1].button = input
                 const label = document.createElement('label')
                 label.innerText = ' ' + bind[0] + ' - ' + bind[1].comment
+                label.classList.add('desktop')
 
                 input.onclick = () => {
                     changingKeybind = bind[1]
                     input.value = '...'
                 }
 
-                settingsKeybinds.parentNode.insertBefore(document.createElement('br'), settingsKeybinds.nextSibling)
+                const br = document.createElement('br')
+                br.classList.add('desktop')
+                settingsKeybinds.parentNode.insertBefore(br, settingsKeybinds.nextSibling)
                 settingsKeybinds.parentNode.insertBefore(label, settingsKeybinds.nextSibling)
                 settingsKeybinds.parentNode.insertBefore(input, settingsKeybinds.nextSibling)
             })
         }
 
-        handleButton('fullscreen', () => {})
+        handleButton('fullscreen', () => {
+            if (document.fullscreenElement == document.body) {
+                document.exitFullscreen()
+            }
+            else {
+                document.body.requestFullscreen()
+            }
+        })
+
+        const list = document.querySelector('#buttons-list')
+        handleButton('hamburger', () => list.classList.toggle('opened', !list.classList.contains('opened')))
 
         // // other // //
 

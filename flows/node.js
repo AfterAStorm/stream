@@ -42,7 +42,8 @@ class ConnectionPoint {
         if (this.position == null)
             return false
         const relative = this.node.getRelative(x, y)
-        return distV2(subV2(relative, this.position)) <= 7
+        const range = this.node.editor.inputType == 'touch' ? 12 : 8
+        return distV2(subV2(relative, this.position)) <= range//7
     }
 }
 
@@ -343,7 +344,7 @@ export class BaseNode {
     }
 
     isPointerPressed() {
-        return this.editor.primaryPressed
+        return this.editor.primaryPressed && this.editor.canInteract()
     }
 
     /* TIMING */
