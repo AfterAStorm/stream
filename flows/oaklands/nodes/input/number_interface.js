@@ -26,7 +26,7 @@ export class Node extends BaseNode {
 
     deserialize(data) {
         super.deserialize(data)
-        this.number = data.number
+        this.number = data.number ?? 0
     }
 
     update() {

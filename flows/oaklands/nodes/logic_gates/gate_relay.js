@@ -30,8 +30,9 @@ export class Node extends BaseNode {
         const currentOutput = this.getLocalConnectionPointValue('#result')
         var setOutput = 0
         const right = this.getConnectionPointValue('#right')
+        const left = this.getConnectionPointValue('#left')
         if (right > 0) {
-            setOutput = this.getConnectionPointValue('#left')
+            setOutput = left
         }
         if (right != this.lastRight) {
             this.lastRight = right

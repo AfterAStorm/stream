@@ -42,7 +42,7 @@ class ConnectionPoint {
         if (this.position == null)
             return false
         const relative = this.node.getRelative(x, y)
-        const range = this.node.editor.inputType == 'touch' ? 12 : 8
+        const range = this.node.editor != null ? (this.node.editor.inputType == 'touch' ? 12 : 8) : 0
         return distV2(subV2(relative, this.position)) <= range//7
     }
 }
