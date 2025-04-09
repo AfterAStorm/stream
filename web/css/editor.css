@@ -11,14 +11,7 @@ html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
-}
-
-html {
     position: fixed;
-}
-
-body {
-    position: relative;
 }
 
 * {
@@ -66,7 +59,7 @@ dialog {
 }
 
 #file-name {
-    width: fit-content;
+    width: 100%;
     margin-left: 10px;
     resize: none;
     height: 100%;
@@ -95,6 +88,10 @@ dialog {
     display: inline-block;
 }
 
+#buttons-list > li > button > span, #hamburger > span {
+    color: black;
+}
+
 #hamburger {
     display: none;
 }
@@ -102,7 +99,7 @@ dialog {
 .button {
     outline: none;
     background-color: transparent;
-    background-repeat: none;
+    background-repeat: no-repeat;
     border: none;
     position: relative;
 }
@@ -118,6 +115,7 @@ dialog {
     display: none;
     text-align: center;
     font-size: 1rem;
+    color: black;
 }
 
 *:has(.tooltip):hover > .tooltip {
@@ -297,6 +295,14 @@ input[type=search]::-webkit-search-cancel-button {
     width: 20px;
     height: 20px;
     margin: 0;
+}
+
+select {
+    color: black;
+}
+
+#edit-options > div > button {
+    color: black;
 }
 
 /* miscellaneous */

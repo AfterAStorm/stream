@@ -922,6 +922,7 @@ export class EditorState {
                 })
 
                 div.addEventListener('pointerdown', e => {
+                    this.inputType = e.pointerType
                     if (this.canSelect() && div.matches(':hover') && bind.isMouse() && (bind.code & e.buttons) != 0) {
                         create()
                     }
