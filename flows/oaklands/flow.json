@@ -65,6 +65,5 @@
         "simulators/speaker"
     ],
 
-    "updateSpeed": 1,
-    "updateSpeedA": 0.03333333333
+    "updateSpeed": 0.03333333333
 }

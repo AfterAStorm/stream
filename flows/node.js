@@ -355,7 +355,6 @@ export class BaseNode {
     }
 
     scheduleTicks(callback, ticks) {
-        //console.log(seconds, 'is', this.getTicks(seconds))
         this.scheduledTasks.push([ticks, callback])
     }
 
