@@ -28,7 +28,7 @@ export class Node extends BaseNode {
         if (passthrough != this.last) {
             this.last = passthrough
             this.setConnectionPointValue('#result', passthrough)
-            this.schedule(() => {
+            this.scheduleTicks(() => {
                 if (this.getLocalConnectionPointValue('#result') != 0)
                     this.setConnectionPointValue('#result', 0)
             }, 0)

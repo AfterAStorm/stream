@@ -106,10 +106,10 @@ export class Flow {
     }
 
     _updateNode(node, depth=0, hold=false) {
-        if (node.hasUpdated)
-            return
         const flow = this
         if (depth > 0) {
+            if (node.hasUpdated)
+                return
             node.hasUpdated = true
             node.needsSoftUpdate = false
             const a = performance.now()
@@ -128,19 +128,24 @@ export class Flow {
         if (hold && node.needsConnectionUpdate)
             return node
         if (node.needsConnectionUpdate) {
+            //console.log('node.needsConnectionUpdate', node)
             //console.log(node, 'needsConnectionUpdate')
             node.needsConnectionUpdate = false
             const connections = flow.connections.filter(c => node.connectionPoints.find(p => c.has(p)))
-            connections.forEach(c => {
+            const updating = []
+            connections.filter(c => c.points.find(p => p.node == node).type == 'output').forEach(c => {
                 c.update()
-                const updating = []
                 c.points.forEach(p => {
+                    if (p.node == node)
+                        return
+                    p.node.hasUpdated = false
                     const isUpdate = this._updateNode(p.node, depth + 1, true)
-                    if (isUpdate != null)
+                    console.log('> force update', p.node)
+                    if (isUpdate != null && !updating.includes(isUpdate))
                         updating.push(isUpdate)
                 })
-                updating.forEach(n => this._updateNode(n, depth + 1, false))
             })
+            updating.forEach(n => this._updateNode(n, depth + 1, false))
             /*connections.forEach(c => {
                 connections.needsUpdate = false
                 c.reset()
