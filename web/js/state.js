@@ -995,6 +995,10 @@ export class EditorState {
         canvas.addEventListener('wheel', this.onWheel)
         window.addEventListener('blur', this.onBlur)
 
+        document.querySelector('#mobile-duplicate').addEventListener('click', () => {
+            this.handleClone()
+        })
+
         const sidebar = document.querySelector('#sidebar')
         document.addEventListener('pointerup', this.onTouchDelete)
 
