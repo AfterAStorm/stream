@@ -975,6 +975,13 @@ export class EditorState {
         }
     }
 
+    setConnectionColor = (color) => {
+        this.connectionColor = color
+        if (this.creatingConnection != null) {
+            this.creatingConnection.color = color
+        }
+    }
+
     /**
      * @param {HTMLCanvasElement} canvas 
      */
@@ -1029,11 +1036,11 @@ export class EditorState {
             div.style.background = value
             div.addEventListener('click', () => {
                 connectionColorInput.value = value
-                this.connectionColor = value
+                this.setConnectionColor(value)
             })
         })
         connectionColorInput.onchange = () => {
-            this.connectionColor = connectionColorInput.value
+            this.setConnectionColor(connectionColorInput.value)
         }
 
         const handleButton = (id, handler) => {

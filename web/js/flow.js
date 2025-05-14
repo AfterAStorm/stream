@@ -140,7 +140,7 @@ export class Flow {
                         return
                     p.node.hasUpdated = false
                     const isUpdate = this._updateNode(p.node, depth + 1, true)
-                    console.log('> force update', p.node)
+                    //console.log('> force update', p.node)
                     if (isUpdate != null && !updating.includes(isUpdate))
                         updating.push(isUpdate)
                 })
