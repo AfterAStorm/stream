@@ -572,6 +572,23 @@ export class EditorState {
             })
             this.selectNodes(duplicates.map(d => d[0]))
         }
+        else if (connections.length > 0 && this.creatingConnection == null) {
+            const connection = connections[0]
+            const subpoint = connection.getHoveringSubPoint(...this.position)
+            if (subpoint != null) {
+                this.selectedPoints = [connection.a]
+                this.creatingConnection = new connection.constructor(connection.a, null)
+                this.creatingConnection.color = connection.color
+                for (let i = 0; i < connection.visualPoints.indexOf(subpoint); i++) {
+                    this.creatingConnection.visualPoints.push(connection.visualPoints[i])
+                }
+                connection.visualPoints.forEach(point => this.creatingConnection.visualPoints.push(point))
+                this.editor.flow.connections.push(this.creatingConnection)
+            }
+            /*this.addHistory('', {
+                
+            })*/
+        }
     }
 
     handleHover() {
