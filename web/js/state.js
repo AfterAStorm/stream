@@ -501,7 +501,36 @@ export class EditorState {
     }
 
     handleRotate() {
-        this.selectedNodes.forEach(node => {
+        const nodes = this.selectedNodes
+        // find center
+        var center = [0, 0]
+        nodes.forEach(node => {
+            const size = node.getSize()
+            node._offset = [ // calculate translation to center
+                (node.rotation % 180 == 0 ? (size[0] / 2) : (size[1] / 2)),
+                (node.rotation % 180 == 0 ? (size[1] / 2) : (size[0] / 2))
+            ]
+            center = [
+                center[0] + node.position[0] + node._offset[0],
+                center[1] + node.position[1] + node._offset[1]
+            ]
+        })
+        center = [center[0] / nodes.length, center[1] / nodes.length]
+
+        // move around center
+        const rad = Math.PI / 2
+        nodes.forEach(node => {
+            const cx = node.position[0] + node._offset[0] - center[0]
+            const cy = node.position[1] + node._offset[1] - center[1]
+            const nx = cx * Math.cos(rad) - cy * Math.sin(rad)
+            const ny = cx * Math.sin(rad) + cy * Math.cos(rad)
+            node.position[0] = nx + center[0] - node._offset[0]
+            node.position[1] = ny + center[1] - node._offset[1]
+        })
+
+        // "rotate"
+        nodes.forEach(node => {
+            node._offset = null // we don't need it anymore
             node.rotation = (node.rotation + 90) % 360
             node.invalidate()
         })
