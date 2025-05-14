@@ -654,7 +654,7 @@ export class EditorState {
         if (this.isKeybindHeld('rotate')) {
             this.handleRotate()
         }
-        if (this.isKeybindHeld('clone')) {
+        if (this.isKeybindHeld('clone') || this.connectMode.checked) {
             this.handleClone()
         }
         if (this.selectionStart != null && (!this.isKeybindHeld('lasso') || !this.isKeybindHeld('select'))) {
@@ -1056,12 +1056,14 @@ export class EditorState {
         document.addEventListener('pointerup', this.onTouchDelete)
 
         this.deleteMode = document.querySelector('#mode-delete')
+        this.connectMode = document.querySelector('#mode-clone')
 
         //this.interactionModeCheckbox = document.getElementById('interaction-mode')
         this.mode = document.querySelector('#mode-select')
 
         const content = document.querySelector('#content')
         this.mode.addEventListener('input', () => {
+            this.connectMode.checked = false
             content.classList.toggle('sidebar-minimized', !['all', 'organize'].includes(this.mode.value))
         })
 
