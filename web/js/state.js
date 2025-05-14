@@ -1057,6 +1057,8 @@ export class EditorState {
 
         this.deleteMode = document.querySelector('#mode-delete')
         this.connectMode = document.querySelector('#mode-clone')
+        const connectModeLabel = this.connectMode.parentElement
+        connectModeLabel.style = 'display: none !important;'
 
         //this.interactionModeCheckbox = document.getElementById('interaction-mode')
         this.mode = document.querySelector('#mode-select')
@@ -1064,6 +1066,7 @@ export class EditorState {
         const content = document.querySelector('#content')
         this.mode.addEventListener('input', () => {
             this.connectMode.checked = false
+            connectModeLabel.style = this.mode.value == 'connect' ? '' : 'display: none !important;'
             content.classList.toggle('sidebar-minimized', !['all', 'organize'].includes(this.mode.value))
         })
 
