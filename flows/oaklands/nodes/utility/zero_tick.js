@@ -31,7 +31,7 @@ export class Node extends BaseNode {
             this.scheduleTicks(() => {
                 if (this.getLocalConnectionPointValue('#result') != 0)
                     this.setConnectionPointValue('#result', 0)
-            }, 0)
+            }, 1)
         }
     }
 
