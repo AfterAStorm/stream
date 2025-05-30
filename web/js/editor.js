@@ -194,6 +194,9 @@ class Editor {
         const delta = timestamp - this.lastTimestamp
         this.lastTimestamp = timestamp
 
+        // extra updates
+        this.state.update(delta)
+
         // attempt update
         await this.update(delta)
     
