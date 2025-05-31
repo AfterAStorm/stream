@@ -637,9 +637,17 @@ export class EditorState {
         const maxY = Math.max(this.selectionStart[1], this.position[1])
 
         const nodes = this.editor.flow.nodes.filter(node => {
-            const a = node.getRelative(minX, minY)
-            const b = node.getRelative(maxX, maxY)
-            return a[0] <= 0 && a[1] <= 0 && b[0] >= 0 && b[1] >= 0
+            //const a = node.getRelative(minX, minY)
+            //const b = node.getRelative(maxX, maxY)
+            const pos = node.getRelative(0, 0)
+            pos[0] *= -1
+            pos[1] *= -1
+            const nodeSize = node.getSize()
+            const size = node.rotation % 180 == 0 ? nodeSize : [nodeSize[1], nodeSize[0]]
+            const pos2 = [pos[0] + size[0], pos[1] + size[1]]
+            //console.log(a, b)
+            return pos[0] < maxX && pos2[0] > minX && pos[1] < maxY && pos2[1] > minY
+            //a[0] <= 0 && a[1] <= 0 && b[0] >= 0 && b[1] >= 0
         })
         if (this.isKeyHeld('Shift')) {
             const newNodes = [...this.selectedNodes]
