@@ -253,7 +253,7 @@ export class EditorState {
             (this.heldKeys.includes('keyd') ? -1 : 0) + (this.heldKeys.includes('keya') ? 1 : 0),
             (this.heldKeys.includes('keys') ? -1 : 0) + (this.heldKeys.includes('keyw') ? 1 : 0)
         ]
-        const speed = .75 + (this.heldKeys.includes('Shift') ? .75 : 0)
+        const speed = .75 + (this.heldKeys.includes('Shift') ? .75 : 0) - (this.heldKeys.includes('Control') ? .5 : 0)
         this.pan[0] += speed * delta * dir[0]// * (1 / this.scale)
         this.pan[1] += speed * delta * dir[1]// * (1 / this.scale)
     }
