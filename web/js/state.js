@@ -249,6 +249,8 @@ export class EditorState {
     }
 
     handlePanKeyboard(delta) {
+        if (document.activeElement != document.body && document.activeElement != null)
+            return
         const dir = [
             (this.heldKeys.includes('keyd') ? -1 : 0) + (this.heldKeys.includes('keya') ? 1 : 0),
             (this.heldKeys.includes('keys') ? -1 : 0) + (this.heldKeys.includes('keyw') ? 1 : 0)
@@ -631,10 +633,10 @@ export class EditorState {
     }
 
     handleLasso() {
-        const minX = Math.min(this.selectionStart[0], this.position[0])
-        const maxX = Math.max(this.selectionStart[0], this.position[0])
-        const minY = Math.min(this.selectionStart[1], this.position[1])
-        const maxY = Math.max(this.selectionStart[1], this.position[1])
+        const minX = Math.min(this.selectionStart[0], this.position[0]) * (1 / this.scale)
+        const maxX = Math.max(this.selectionStart[0], this.position[0]) * (1 / this.scale)
+        const minY = Math.min(this.selectionStart[1], this.position[1]) * (1 / this.scale)
+        const maxY = Math.max(this.selectionStart[1], this.position[1]) * (1 / this.scale)
 
         const nodes = this.editor.flow.nodes.filter(node => {
             //const a = node.getRelative(minX, minY)
