@@ -145,6 +145,26 @@
                 <h3 id="keybinds">keybinds</h3>
                 <p class="mobile">You cannot have keybinds, you goob!</p>
                 <h3>other</h3>
+                <button id="profiler">Open Profiler</button>
+                <br />
+                <br />
+                <button>Close</button>
+            </form>
+        </dialog>
+        <dialog id="profiler-dialog">
+            <form method="dialog">
+                <h1>profile</h1>
+                <div>
+                    <label>Update <input id="profiler-radio-update" class="profiler-radio" type="radio" name="type" checked></label>
+                    <label>Draw <input class="profiler-radio" type="radio" name="type"></label>
+                </div>
+                <div>
+                    <a style="float: left; font-weight: bold;">0 ms</a>
+                    <a id="profiler-length" style="float: right; font-weight: bold;">5seconds</a>
+                </div>
+                <canvas id="profiler-canvas" width="1600" height="200"></canvas>
+                <br />
+                <div style="background-color: black; color: white; padding: 5px; font: 20px monospace; white-space: pre;"><ul id="profiler-totals"></ul></div>
                 <br />
                 <button>Close</button>
             </form>

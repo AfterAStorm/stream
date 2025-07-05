@@ -27,7 +27,7 @@ export class Profiler {
         return performance.now()
     }
 
-    _getSubGrouo(depth) {
+    _getSubGroup(depth) {
         var subTiming = this.timings[this.timings.length - 1]
         for (let i = 0; i < depth - 1; i++) {
             subTiming = subTiming.timings[subTiming.timings.length - 1]
@@ -38,7 +38,7 @@ export class Profiler {
     group(name) {
         var group = this.timings
         if (this.groupDepth > 0)
-            group = this._getSubGrouo(this.groupDepth).timings
+            group = this._getSubGroup(this.groupDepth).timings
             //group = this.timings[this.timings.length - 1].timings
         group.push(new Timing(this.now(), name))
         this.groupDepth++
@@ -52,7 +52,7 @@ export class Profiler {
     close() {
         if (this.groupDepth <= 0)
             throw new Error("Not inside any groups")
-        this._getSubGrouo(this.groupDepth).done = this.now()
+        this._getSubGroup(this.groupDepth).done = this.now()
         this.groupDepth--
     }
 }

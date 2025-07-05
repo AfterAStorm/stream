@@ -16,6 +16,8 @@ export class Node extends BaseNode {
         this.addConnectionPoint('output', 'right', '#result', 'Operation Result, x (+/-/*/÷/^) y')
         this.setConnectionPointValue('#result', 0)
 
+        this.cached = true
+
         /*
         1 = add
         2 = sub
@@ -91,7 +93,12 @@ export class Node extends BaseNode {
      * @param {CanvasRenderingContext2D} context 
      */
     draw(context) {
-        super.draw(context)
+        //super.draw(context)
+        const context2 = super.draw(context)
+        if (!context2)
+            return this.cacheDraw(context)
+        const orig = context
+        context = context2
 
         const size = this.getSize()
         
@@ -143,5 +150,6 @@ export class Node extends BaseNode {
         context.font = 'bold 40px monospace'
         context.fillText(character, centerX, centerY)
 
+        this.cacheDraw(orig)
     }
 }

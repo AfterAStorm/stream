@@ -15,6 +15,8 @@ export class Node extends BaseNode {
         this.addConnectionPoint('output', 'right', '#result', 'The provided number')
         this.setConnectionPointValue('#result', 0)
 
+        this.cached = true
+
         this.cooldown = false
     }
 
@@ -34,7 +36,12 @@ export class Node extends BaseNode {
      * @param {CanvasRenderingContext2D} context 
      */
     draw(context) {
-        super.draw(context)
+        //super.draw(context)
+        const context2 = super.draw(context)
+        if (!context2)
+            return this.cacheDraw(context)
+        const orig = context
+        context = context2
 
         const size = this.getSize()
         
@@ -64,5 +71,6 @@ export class Node extends BaseNode {
         context.lineTo(size[0] - 7, centerY)
         context.stroke()
 
+        this.cacheDraw(orig)
     }
 }

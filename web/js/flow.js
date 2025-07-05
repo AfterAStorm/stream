@@ -171,17 +171,25 @@ export class Flow {
      */
     update(editor) {
         this.updateEditor(editor)
+        upprofiler.group('sort priority')
         this.nodes.sort((a, b) => b.getPriority() - a.getPriority())
+        upprofiler.close()
         this.nodes.forEach(n => {
             n.needsSoftUpdate = true
             n.hasUpdated = false
             n.debug.depth = 0
             n.debug.updated = false
         })
+        upprofiler.group('update connection cache')
         this.updateNodeConnectionCaches()
+        upprofiler.close()
+        upprofiler.group('update nodes')
         this.nodes.forEach(n => {
+            upprofiler.group(`update ${n.display} node`)
             this._updateNode(n)
+            upprofiler.close()
         })
+        upprofiler.close()
         /*this.nodes.forEach(n => {
             this._updateNode(n)
         })*/
@@ -221,7 +229,9 @@ export class Flow {
         this.nodes.forEach(n => {
             context.save()
             const a = performance.now()
+            profiler.group(`draw ${n.display} node${n.cached ? ' (cached)' : ''}`)
             n.draw(context)
+            profiler.close()
             n.debug.drawTime = performance.now() - a
             context.restore()
         })

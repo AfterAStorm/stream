@@ -14,6 +14,8 @@ export class Node extends BaseNode {
         this.addConnectionPoint('output', 'right', '#pressed', 'Switch Pressed\n**Outputs: ⚡ 10')
         this.setConnectionPointValue('#pressed', 0)
 
+        this.cached = true
+
         this.pressed = false
         this.cooldown = false
     }
@@ -80,7 +82,12 @@ export class Node extends BaseNode {
      * @param {CanvasRenderingContext2D} context 
      */
     draw(context) {
-        super.draw(context)
+        //super.draw(context)
+        const context2 = super.draw(context)
+        if (!context2)
+            return this.cacheDraw(context)
+        const orig = context
+        context = context2
 
         const size = this.getSize()
 
@@ -104,5 +111,7 @@ export class Node extends BaseNode {
         context.fillText('O', centerX - width / 4, centerY + 2)
         context.font = 'bold 25px monospace'
         context.fillText('|', centerX + width / 4, centerY + 2)
+        
+        this.cacheDraw(orig)
     }
 }

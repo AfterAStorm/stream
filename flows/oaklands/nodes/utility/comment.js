@@ -12,6 +12,8 @@ export class Node extends BaseNode {
     constructor() {
         super()
 
+        this.cached = true
+
         this.comment = 'Enter text here...'
         this.cooldown = false
         this.size = [2, .5]
@@ -55,7 +57,12 @@ export class Node extends BaseNode {
      * @param {CanvasRenderingContext2D} context 
      */
     draw(context) {
-        super.draw(context)
+        //super.draw(context)
+        const context2 = super.draw(context)
+        if (!context2)
+            return this.cacheDraw(context)
+        const orig = context
+        context = context2
 
         const size = this.getSize()
         
@@ -92,5 +99,7 @@ export class Node extends BaseNode {
         // that means the size will always be 1 frame behind... but it doesn't really matter
         this.size[0] = Math.max((commentWidth.width + 10) / 100, 1)
         context.fillText(this.comment, centerX, centerY)
+
+        this.cacheDraw(orig)
     }
 }

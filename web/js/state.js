@@ -1248,5 +1248,96 @@ export class EditorState {
             editToggle.innerText = editToggled ? '<' : '>'
             editOptions.classList.toggle('hidden', !editToggled)
         })
+        
+        // profiler
+        // bounds: [x, width, y]
+        const colors = ['red', 'green', 'blue', 'orange']
+        /**
+         * 
+         * @param {Array} bounds 
+         * @param {Array} layer Array of timings
+         * @param {CanvasRenderingContext2D} ctx 
+         */
+        function drawLayer(bounds, layer, ctx, averages) {
+            ctx.strokeStyle = 'gray'
+            ctx.lineWidth = 5
+            const total = layer.length
+            const from = layer[0].at
+            const duration = layer[total - 1].done - from
+            //console.log('layer', bounds, from, duration)
+            for (let i = 0; i < total; i++) {
+                ctx.fillStyle = colors[i % 4]
+                const segment = layer[i]
+                const x1Percent = duration <= 0 ? 0 : (segment.at - from) / duration
+                const x2Percent = duration <= 0 ? 1 : (segment.done - from) / duration
+                const widthPercent = x2Percent - x1Percent
+                const x = bounds[0] + bounds[1] * x1Percent
+                const y = bounds[2]
+                const width = bounds[1] * widthPercent
+                //console.log(segment, x1Percent, x2Percent)
+                ctx.fillRect(x, y, width, 50)
+                ctx.strokeRect(x, y, width, 50)
+                ctx.fillStyle = 'white'
+                ctx.font = '30px monospace'
+                ctx.textBaseline = 'middle'
+                ctx.fillText(segment.display, x + 5, y + 50 / 2)
+                if (segment.timings.length > 0) {
+                    drawLayer([x, width, y + 50], segment.timings, ctx, averages)
+                }
+                else {
+                    averages[segment.display] = (averages[segment.display] ?? 0) + (segment.done - segment.at)
+                }
+            }
+        }
+
+        const profilerDialog = document.querySelector('#profiler-dialog')
+        const profilerCanvas = document.querySelector('#profiler-canvas')
+        const profilerRadios = document.querySelectorAll('.profiler-radio')
+        const profilerRadioUpdate = document.querySelector('#profiler-radio-update')
+        const profilerLengthLabel = document.querySelector('#profiler-length')
+        const profilerTotals = document.querySelector('#profiler-totals')
+
+        function drawProfile(profiler) {
+            profilerDialog.showModal()
+            const data = profiler.history[profiler.history.length - 1]
+            const ctx = profilerCanvas.getContext('2d')
+            const width = profilerCanvas.width
+            const height = profilerCanvas.height
+
+            profilerLengthLabel.innerText = `${(data[data.length - 1].done - data[0].at).toFixed(2)} ms`
+            
+            ctx.fillStyle = 'black'
+            ctx.fillRect(0, 0, width, height)
+            const averages = {}
+            drawLayer([0, width, 0], data, ctx, averages)
+            
+            while (profilerTotals.firstChild) {
+                profilerTotals.removeChild(profilerTotals.firstChild)
+            }
+            const maxLength = Object.keys(averages).reduce((r, v) => Math.max(v.length, r), 0)
+            for (const display in averages) {
+                const e = document.createElement('li')
+                e.innerText = `${' '.repeat((maxLength - display.length))}${display} -> ${averages[display]}ms`
+
+                profilerTotals.appendChild(e)
+            }
+        }
+
+        function getProfiler() {
+            if (profilerRadioUpdate.checked) {
+                return upprofiler
+            }
+            return profiler
+        }
+
+        document.querySelector('#profiler').addEventListener('click', () => {
+            drawProfile(getProfiler())
+        })
+
+        profilerRadios.forEach((r) => {
+            r.addEventListener('change', () => {
+                drawProfile(getProfiler())
+            })
+        })
     }
 }

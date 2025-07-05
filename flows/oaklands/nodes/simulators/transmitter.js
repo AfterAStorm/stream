@@ -21,6 +21,8 @@ export class Node extends BaseNode {
         super()
         this.addConnectionPoint('input', 'left', '#input', 'Sends the signal to all receivers with the same "channel"')
 
+        this.cached = true
+
         this.channel = 'none'
     }
 
@@ -68,7 +70,12 @@ export class Node extends BaseNode {
      * @param {CanvasRenderingContext2D} context 
      */
     draw(context) {
-        super.draw(context)
+        //super.draw(context)
+        const context2 = super.draw(context)
+        if (!context2)
+            return this.cacheDraw(context)
+        const orig = context
+        context = context2
 
         const size = this.getSize()
         const centerX = size[0] / 2
@@ -103,5 +110,7 @@ export class Node extends BaseNode {
         context.textBaseline = 'middle'
         context.font = '10px monospace'
         context.fillText(this.channel, centerX, size[1] + 10)
+        
+        this.cacheDraw(orig)
     }
 }

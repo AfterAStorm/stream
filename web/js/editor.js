@@ -32,25 +32,30 @@ class Editor {
     }
 
     async update(dt) {
-        profiler.group('update')
-
         const millisecondsPerUpdate = (this.flow.updateSpeed || 1) * 1000
-        
         this.delta += dt
+
+        if (this.delta >= millisecondsPerUpdate)
+            upprofiler.group('update')
+
         var updates = 0
         while (this.delta >= millisecondsPerUpdate /*&& !(this.state.debug && context.editor.pause)*/) {
-            profiler.group(`update ${updates}`)
+            upprofiler.group(`update ${updates}`)
             this.delta -= millisecondsPerUpdate
             this.flow.update(this.state)
             updates += 1
-            profiler.close()
+            upprofiler.close()
             if (updates > 9) {
                 console.warn('>=10 updates in a single frame, aborting')
                 this.delta = 0
             }
+            break
         }
         
-        profiler.close()
+        if (upprofiler.groupDepth > 0) {
+            upprofiler.close()
+            upprofiler.log()
+        }
     }
     
     async draw() {
@@ -233,7 +238,8 @@ async function main() {
     const shareData = params.get('share')
 
     // setup editor
-    window.profiler = new Profiler()
+    window.profiler = new Profiler() // draw profiler
+    window.upprofiler = new Profiler() // update profiler
     window.editor = new Editor(
         document.querySelector('#chart')
     )
