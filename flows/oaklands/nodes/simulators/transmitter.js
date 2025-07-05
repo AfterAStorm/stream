@@ -24,6 +24,7 @@ export class Node extends BaseNode {
         this.cached = true
 
         this.channel = 'none'
+        this.last = NaN
     }
 
     serialize() {
@@ -41,8 +42,12 @@ export class Node extends BaseNode {
         super.update()
 
         const value = this.getConnectionPointValue('#input')
-        this.editor._airwaves = this.editor._airwaves ?? {}
-        this.editor._airwaves[this.channel] = value
+        if (this.last != value) {
+            this.editor._airwaves = this.editor._airwaves ?? {}
+            this.editor._airwaves[this.channel] = value
+            this.last = value
+            this.invalidate()
+        }
 
         // changing value
         const isPressed = this.isPointerPressed()
@@ -62,6 +67,7 @@ export class Node extends BaseNode {
             this.cooldown = true
             this.getUserTextInput(this.channel).then(v => {
                 this.channel = v
+                this.invalidate()
             })
         }
     }

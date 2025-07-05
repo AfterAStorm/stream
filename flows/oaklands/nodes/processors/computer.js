@@ -86,6 +86,7 @@ export class Node extends BaseNode {
             this.mode += 1
             if (this.mode > 5)
                 this.mode = 1
+            this.invalidate()
         }
     }
 

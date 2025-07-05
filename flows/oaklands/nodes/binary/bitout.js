@@ -38,6 +38,7 @@ export class Node extends BaseNode {
                 this.setConnectionPointValue(`#result${i + 1}`, (num & pow2) != 0 ? 10 : 0)
             }
             this.setConnectionPointValue(`#result5`, (Math.floor(num / 16) * 10))
+            this.invalidate()
         }
     }
 

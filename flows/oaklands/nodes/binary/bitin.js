@@ -38,6 +38,7 @@ export class Node extends BaseNode {
         //num += 16 * (carry / 10)
         if (this.getLocalConnectionPointValue('#number') != num) {
             this.setConnectionPointValue('#number', num)
+            this.invalidate()
         }
     }
 

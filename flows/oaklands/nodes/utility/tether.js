@@ -29,6 +29,7 @@ export class Node extends BaseNode {
         
         if (setOutput != currentOutput) {
             this.setConnectionPointValue('#result', setOutput)
+            this.invalidate()
         }
     }
 

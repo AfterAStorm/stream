@@ -43,8 +43,10 @@ export class Node extends BaseNode {
         this.editor._airwaves = this.editor._airwaves ?? {}
 
         const setValue = this.editor._airwaves[this.channel] ?? 0
-        if (this.getLocalConnectionPointValue('#output') != setValue)
+        if (this.getLocalConnectionPointValue('#output') != setValue) {
             this.setConnectionPointValue('#output', setValue)
+            this.invalidate()
+        }
 
         // changing value
         const isPressed = this.isPointerPressed()
@@ -64,6 +66,7 @@ export class Node extends BaseNode {
             this.cooldown = true
             this.getUserTextInput(this.channel).then(v => {
                 this.channel = v
+                this.invalidate()
             })
         }
     }

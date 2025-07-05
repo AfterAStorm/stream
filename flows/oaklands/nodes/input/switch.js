@@ -75,6 +75,7 @@ export class Node extends BaseNode {
             this.cooldown = true
             this.pressed = !this.pressed
             this.setConnectionPointValue('#pressed', this.pressed ? 10 : 0)
+            this.invalidate()
         }
     }
 

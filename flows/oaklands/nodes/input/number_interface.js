@@ -62,6 +62,7 @@ export class Node extends BaseNode {
                 this.number = parseFloat(v)
                 if (Number.isNaN(this.number))
                     this.number = 10
+                this.invalidate()
             })
         }
     }
