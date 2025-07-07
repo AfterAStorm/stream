@@ -12,7 +12,7 @@ export class Node extends BaseNode {
     constructor() {
         super()
 
-        this.cached = true
+        //this.cached = true
 
         this.comment = 'Enter text here...'
         this.cooldown = false
@@ -57,12 +57,12 @@ export class Node extends BaseNode {
      * @param {CanvasRenderingContext2D} context 
      */
     draw(context) {
-        //super.draw(context)
-        const context2 = super.draw(context)
+        super.draw(context)
+        /*const context2 = super.draw(context)
         if (!context2)
             return this.cacheDraw(context)
         const orig = context
-        context = context2
+        context = context2*/
 
         const size = this.getSize()
         
@@ -100,6 +100,6 @@ export class Node extends BaseNode {
         this.size[0] = Math.max((commentWidth.width + 10) / 100, 1)
         context.fillText(this.comment, centerX, centerY)
 
-        this.cacheDraw(orig)
+        //this.cacheDraw(orig)
     }
 }
