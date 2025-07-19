@@ -85,7 +85,8 @@ export class EditorState {
         this.isDragging = false
         this.heldKeys = []
 
-        this.connectionColor = '#ff0000'
+        this.hoveredConnectionColor = null
+        this.connectionColor = null
 
         this.keybinds = {
             'select':       new Keybind('interact, select, and create connections with nodes', 1),
@@ -1109,10 +1110,21 @@ export class EditorState {
             if (value == null)
                 return
             div.style.background = value
-            div.addEventListener('click', () => {
-                connectionColorInput.value = value
-                this.setConnectionColor(value)
+            div.addEventListener('pointerover', () => {
+                this.hoveredConnectionColor = value
             })
+            div.addEventListener('pointerleave', () => {
+                if (this.hoveredConnectionColor == value)
+                    this.hoveredConnectionColor = null
+            })
+            function set(state) {
+                connectionColorInput.value = value
+                state.setConnectionColor(value)
+            }
+            div.addEventListener('click', () => set(this))
+            if (this.connectionColor == null) {
+                set(this)
+            }
         })
         connectionColorInput.onchange = () => {
             this.setConnectionColor(connectionColorInput.value)

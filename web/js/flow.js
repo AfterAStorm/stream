@@ -235,14 +235,14 @@ export class Flow {
             n.debug.drawTime = performance.now() - a
             context.restore()
         })
-        const b = performance.now()
+        profiler.group('draw connections')
         if (this.editor == null || this.editor.drawConnections != false)
             this.connections.forEach(c => {
                 context.save()
                 c.draw(context)
                 context.restore()
             })
-        this._connectionDrawTime = performance.now() - b // "temporary" debug variable
+        profiler.close()
     }
 
     async deserialize(json) {

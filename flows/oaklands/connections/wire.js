@@ -140,6 +140,14 @@ export class Connection {
         this.ghost = this.points.some(p => p.node.ghost)
         if (this.ghost)
             context.globalAlpha = .5
+        if (
+            (this.editor != null) && (
+                (this.editor.hoveredPoint != null && !this.points.includes(this.editor.hoveredPoint)) ||
+                (this.editor.hoveredConnectionColor != null && this.editor.hoveredConnectionColor != this.color) ||
+                (this.editor.hoveredConnection != null && this.editor.hoveredConnection != this)
+            )) {
+            context.globalAlpha = .2
+        }
 
         context.lineCap = 'round'
         context.lineJoin = 'round'
