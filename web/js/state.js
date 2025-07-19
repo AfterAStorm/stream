@@ -117,6 +117,7 @@ export class EditorState {
         this.selectedConnections = []
         this.selectedSubPoints = []
 
+        this.hoveredNodeType = null // for node highlighting, set in onFlowLoad
         this.hoveredNode = null
         this.hoveredPoint = null
         this.hoveredConnection = null
@@ -997,6 +998,15 @@ export class EditorState {
                     if (this.canSelect() && div.matches(':hover') && bind.isMouse() && (bind.code & e.buttons) != 0) {
                         create()
                     }
+                })
+
+                div.addEventListener('pointerover', () => {
+                    this.hoveredNodeType = nd.id
+                })
+
+                div.addEventListener('pointerleave', () => {
+                    if (this.hoveredNodeType == nd.id)
+                        this.hoveredNodeType = null
                 })
 
                 div.addEventListener('keydown', e => {

@@ -419,6 +419,9 @@ export class BaseNode {
     draw(context) {
         if (this.ghost)
             context.globalAlpha = .5
+        if (this.editor != null && (this.editor.hoveredNodeType != null && this.editor.hoveredNodeType != this.id)) {
+            context.globalAlpha = .2
+        }
 
         const size = this.getSize()
 
