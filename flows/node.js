@@ -420,7 +420,9 @@ export class BaseNode {
         if (this.ghost)
             context.globalAlpha = .5
         if (this.editor != null && (this.editor.hoveredNodeType != null && this.editor.hoveredNodeType != this.id)) {
-            context.globalAlpha = .2
+            const dt = Date.now() - this.editor.hoverTime
+            if (dt > 500)
+                context.globalAlpha = 1 + -.8 * (Math.min(1000, dt * 4 - 2000) / 1000)//.2
         }
 
         const size = this.getSize()

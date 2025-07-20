@@ -117,6 +117,7 @@ export class EditorState {
         this.selectedConnections = []
         this.selectedSubPoints = []
 
+        this.hoverTime = null // fade time, Date.now() (wait 1000, then fade)
         this.hoveredNodeType = null // for node highlighting, set in onFlowLoad
         this.hoveredNode = null
         this.hoveredPoint = null
@@ -1001,11 +1002,14 @@ export class EditorState {
 
                 div.addEventListener('pointerover', () => {
                     this.hoveredNodeType = nd.id
+                    this.hoverTime = Date.now()
                 })
 
                 div.addEventListener('pointerleave', () => {
-                    if (this.hoveredNodeType == nd.id)
+                    if (this.hoveredNodeType == nd.id) {
                         this.hoveredNodeType = null
+                        this.hoverTime = null
+                    }
                 })
 
                 div.addEventListener('keydown', e => {
