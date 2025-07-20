@@ -43,7 +43,7 @@ export class Flow {
 
     canConnectTo(point, otherPoint) {
         const defA = this.connectionPointTypes[point.type]
-        if (defA.connects.includes(otherPoint.type))
+        if (defA.connects.includes(otherPoint.type) && point.node != otherPoint.node)
             return true
         return false
     }

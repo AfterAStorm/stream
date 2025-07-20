@@ -141,7 +141,7 @@ export class Connection {
         if (this.ghost)
             context.globalAlpha = .5
         if (
-            (this.editor != null) && (
+            (this.editor != null && this != this.editor.creatingConnection) && (
                 (this.editor.hoveredPoint != null && !this.points.includes(this.editor.hoveredPoint)) ||
                 (this.editor.hoveredConnectionColor != null && this.editor.hoveredConnectionColor != this.color) ||
                 (this.editor.hoveredConnection != null && this.editor.hoveredConnection != this)

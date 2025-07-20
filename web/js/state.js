@@ -979,7 +979,6 @@ export class EditorState {
                         this.creatingNode = null
                         return
                     }
-                    console.warn('create')
                     this.creatingNode = new nd()
                     this.creatingNode.position[0] = -100000000000
                     this.editor.flow.nodes.push(this.creatingNode)
