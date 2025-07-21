@@ -598,10 +598,10 @@ export class EditorState {
                 this.selectedPoints = [connection.a]
                 this.creatingConnection = new connection.constructor(connection.a, null)
                 this.creatingConnection.color = connection.color
-                for (let i = 0; i < connection.visualPoints.indexOf(subpoint); i++) {
+                for (let i = 0; i < subpoint + 1; i++) {
                     this.creatingConnection.visualPoints.push(connection.visualPoints[i])
                 }
-                connection.visualPoints.forEach(point => this.creatingConnection.visualPoints.push(point))
+                //connection.visualPoints.forEach(point => this.creatingConnection.visualPoints.push(point))
                 this.editor.flow.connections.push(this.creatingConnection)
             }
             /*this.addHistory('', {
