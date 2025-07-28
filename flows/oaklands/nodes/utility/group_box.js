@@ -64,7 +64,7 @@ export class Node extends BaseNode {
         }
 
         if (this.color == null)
-            this.color = this.editor.color
+            this.color = this.editor.connectionColor
         
         if (!this.isPointerPressed()) {
             this.resizing = false
