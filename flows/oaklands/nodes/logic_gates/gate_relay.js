@@ -19,6 +19,7 @@ export class Node extends BaseNode {
         this.pressed = false
         this.cooldown = false
         
+        this.lastLeft = 0
         this.lastRight = 0
 
         this.cached = true
@@ -34,13 +35,17 @@ export class Node extends BaseNode {
         if (right > 0) {
             setOutput = left
         }
+        if (left != this.lastLeft) {
+            this.lastLeft = left
+            this.invalidate()
+        }
         if (right != this.lastRight) {
             this.lastRight = right
-            this.invalidated = true
+            this.invalidate()
         }
         
         if (setOutput != currentOutput) {
-            this.invalidated = true
+            this.invalidate()
             this.setConnectionPointValue('#result', setOutput)
         }
     }

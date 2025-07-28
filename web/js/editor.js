@@ -159,26 +159,28 @@ class Editor {
             
             context.fillStyle = '#555'
             context.font = '15px monospace'
-            const valueSizeNeeded = context.measureText(this.state.hoveredPoint.value)
+            const message = `${this.state.hoveredPoint.value} (o${this.flow.nodes.indexOf(this.state.hoveredPoint.node)})`
+            const valueSizeNeeded = context.measureText(message)
             context.beginPath()
             context.roundRect(pos[0] - valueSizeNeeded.width / 2, pos[1] + 20, valueSizeNeeded.width + 10, 20, 10)
             context.fill()
             
             context.fillStyle = '#fff'
-            context.fillText(this.state.hoveredPoint.value, pos[0] - valueSizeNeeded.width / 2 + 5, pos[1] + 30)
+            context.fillText(message, pos[0] - valueSizeNeeded.width / 2 + 5, pos[1] + 30)
         }
         else if (this.state.hoveredConnection != null) {
             context.fillStyle = '#555'
             context.font = '15px monospace'
             context.textAlign = 'left'
             context.textBaseline = 'middle'
-            const valueSizeNeeded = context.measureText(this.state.hoveredConnection.value)
+            const message = `${this.state.hoveredConnection.value} (o${this.flow.connections.indexOf(this.state.hoveredConnection)})`
+            const valueSizeNeeded = context.measureText(message)
             context.beginPath()
             context.roundRect(pos[0] - valueSizeNeeded.width / 2, pos[1] + 20, valueSizeNeeded.width + 10, 20, 10)
             context.fill()
             
             context.fillStyle = '#fff'
-            context.fillText(this.state.hoveredConnection.value, pos[0] - valueSizeNeeded.width / 2 + 5, pos[1] + 30)
+            context.fillText(message, pos[0] - valueSizeNeeded.width / 2 + 5, pos[1] + 30)
         }
 
         // draw selection

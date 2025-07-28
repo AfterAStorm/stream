@@ -22,6 +22,7 @@ export class Connection {
         this.a = connectionA
         this.b = connectionB
         this.value = 0
+        this.nextValue = 0
         this.points = [connectionA]
         if (connectionB)
             this.points.push(connectionB)
@@ -128,7 +129,7 @@ export class Connection {
         const a = this.a.type == 'input' ? this.b : this.a
         //const b = this.a.type == 'input' ? this.a : this.b
         if (a != null)
-            this.value = Math.max(a.value || 0, 0)
+            this.nextValue = Math.max(a.value || 0, 0)
         //if (b != null)
         //    b.value += this.value
     }

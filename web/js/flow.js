@@ -190,6 +190,10 @@ export class Flow {
             upprofiler.close()
         })
         upprofiler.close()
+        this.connections.forEach(c => {
+            c.value = c.nextValue ?? c.value
+            c.nextValue = null
+        })
         /*this.nodes.forEach(n => {
             this._updateNode(n)
         })*/
