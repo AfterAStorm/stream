@@ -28,10 +28,10 @@ export class Node extends BaseNode {
         if (passthrough != this.last) {
             this.last = passthrough
             this.setConnectionPointValue('#result', passthrough)
-            this.scheduleTicks(() => {
+            this.schedule(() => { //this.scheduleTicks(() => {
                 if (this.getLocalConnectionPointValue('#result') != 0)
                     this.setConnectionPointValue('#result', 0)
-            }, 1)
+            }, .1) // "Outputs the inputted signal for a 0.1 seconds" WHY? THAT'S NOT ZERO TICKS! //1)
         }
     }
 

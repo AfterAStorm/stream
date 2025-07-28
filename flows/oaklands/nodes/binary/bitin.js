@@ -30,7 +30,7 @@ export class Node extends BaseNode {
         // output
         var num = 0
         for (let i = 0; i < /*4*/5; i++) {
-            const isSet = this.getConnectionPointValue(`#result${i + 1}`) >= 10
+            const isSet = this.getConnectionPointValue(`#result${i + 1}`) > 0
             num += isSet ? Math.pow(2, i) : 0
         }
         // it doesn't actually use the carry bit how i expected it to, so the max number you can get out of a bit input is 31 (5 bits)... damn
