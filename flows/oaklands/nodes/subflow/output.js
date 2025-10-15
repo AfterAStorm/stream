@@ -3,54 +3,49 @@
 import { BaseNode } from "../../../node.js"
 
 export class Node extends BaseNode {
-    static id         = "transmitter"
-    static display    = "Transmitter"
+    static id         = "subflow_output"
+    static display    = "Output"
     static size       = [.75, .75]
     static icon       = "$assets/transmitter.png"
-    static category   = "simulators"
+    static category   = "subflow"
 
     constructor() {
         super()
-        this.addInteractable('#config', 'bottom', .5, 'none', this.getSize()[0] - 20, '10px monospace')
-        this.addConnectionPoint('input', 'left', '#input', 'Sends the signal to all receivers with the same "channel"')
+        this.addInteractable('#description', 'bottom', .5, 'Description', this.getSize()[0] - 20, "10px monospace")
+        this.addConnectionPoint('input', 'left', '#input', 'Sends the input outside the subflow')
 
-        this.cached = true
+        //this.cached = true
 
-        this.channel = 'none'
-        this.last = NaN
+
+        this.description = 'Description'
+    }
+
+    static placeable(state) {
+        return state.editor.main_flow != state.editor.flow
     }
 
     serialize() {
         const data = super.serialize()
-        data['channel'] = this.channel
+        data['description'] = this.description
         return data
     }
 
     deserialize(data) {
         super.deserialize(data)
-        this.channel = data.channel ?? ''
-        this.setInteractableText('#config', this.channel)
+        this.description = data.description || ''
+        this.setInteractableText('#description', this.description)
     }
 
     update() {
         super.update()
-
-        const value = this.getConnectionPointValue('#input')
-        if (this.last != value) {
-            this.editor._airwaves = this.editor._airwaves ?? {}
-            this.editor._airwaves[this.channel] = value
-            this.last = value
-            this.invalidate()
-        }
     }
 
     input(action) {
         switch (action) {
-            case '#config':
-                this.getUserTextInput(this.channel).then(v => {
-                    this.channel = v
-                    this.setInteractableText('#config', this.channel)
-                    this.invalidate()
+            case '#description':
+                this.getUserTextInput(this.description).then(v => {
+                    this.description = v ?? this.description
+                    this.setInteractableText('#description', this.description)
                 })
                 break
         }
@@ -68,6 +63,7 @@ export class Node extends BaseNode {
         context = context2
 
         const size = this.getSize()
+        const centerX = size[0] / 2
         const centerY = size[1] / 2
 
         // draw antenna
@@ -77,6 +73,6 @@ export class Node extends BaseNode {
         context.lineTo(size[0] * 2, centerY)
         context.stroke()
         
-        this.cacheDraw(orig)
+        //this.cacheDraw(orig)
     }
 }

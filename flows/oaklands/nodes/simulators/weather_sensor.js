@@ -28,6 +28,7 @@ export class Node extends BaseNode {
 
     constructor() {
         super()
+        this.addInteractable('#config', 'bottom', .5, 'Clear', this.getSize()[0] - 20, '10px monospace')
         this.addConnectionPoint('output', 'right', '#result', 'Sends a signal based on the weather\n' + Object.entries(NAMES).map(pair => `**Output ⚡ ${pair[1]} = ${pair[0]}`).join('\n'))
         this.setConnectionPointValue('#result', 1)
 
@@ -44,6 +45,7 @@ export class Node extends BaseNode {
         super.deserialize(data)
         this.value = data.value ?? 1
         this.setConnectionPointValue('#result', this.value)
+        this.setInteractableText('#config', Object.entries(NAMES).find(pair => pair[1] == this.value)[0])
     }
 
     update() {
@@ -51,30 +53,20 @@ export class Node extends BaseNode {
 
         if (this.getLocalConnectionPointValue('#result') != this.value)
             this.setConnectionPointValue('#result', this.value)
+    }
 
-        // changing value
-        const isPressed = this.isPointerPressed()
-        if (!isPressed && this.cooldown)
-            this.cooldown = false
-        if (!isPressed)
-            return // "mouse" isn't pressed
-
-        if (this.cooldown)
-            return // ignore wehn under cooldown
-
-        // find distance
-        const size = this.getSize()
-        const pos = this.getRelativePointer()
-        
-        if (this.isHoveringRectangle(pos, 20, size[1], size[0] - 40, 20)) {
-            this.cooldown = true
-            this.getUserSelectionInput(NAMES, this.value).then(v => {
-                this.value = v || this.value
-                this.setConnectionPointValue('#result', 0)
-                this.schedule(() => {
-                    this.setConnectionPointValue('#result', this.value)
-                }, 0)
-            })
+    input(action) {
+        switch (action) {
+            case '#config':
+                this.getUserSelectionInput(NAMES, this.value).then(v => {
+                    this.value = v || this.value
+                    this.setConnectionPointValue('#result', 0)
+                    this.schedule(() => {
+                        this.setConnectionPointValue('#result', this.value)
+                    }, 0)
+                    this.setInteractableText('#config', Object.entries(NAMES).find(pair => pair[1] == this.value)[0])
+                })
+                break
         }
     }
 
@@ -83,32 +75,5 @@ export class Node extends BaseNode {
      */
     draw(context) {
         super.draw(context)
-
-        const size = this.getSize()
-        const centerX = size[0] / 2
-        const centerY = size[1] / 2
-
-        // draw value
-        context.save()
-        context.beginPath()
-        context.rect(0, size[1], size[0], 40)
-        context.clip()
-
-        context.beginPath()
-        context.roundRect(10, size[1] - 20, size[0] - 20, 40, 10)
-        context.fill()
-        
-        context.fillStyle = '#ddd'
-        context.beginPath()
-        context.roundRect(11, size[1] - 21, size[0] - 22, 40, 10)
-        context.fill()
-        
-        context.restore()
-
-        context.fillStyle = '#000'
-        context.textAlign = 'center'
-        context.textBaseline = 'middle'
-        context.font = '10px monospace'
-        context.fillText(Object.entries(NAMES).find(pair => pair[1] == this.value)[0], centerX, size[1] + 10)
     }
 }

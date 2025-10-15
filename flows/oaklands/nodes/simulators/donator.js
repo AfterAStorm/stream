@@ -2,14 +2,6 @@
 
 import { BaseNode } from "../../../node.js"
 
-function lerp(a, b, t) {
-    return a + (b - a) * t
-}
-
-function lerpV3(a, b, t) {
-    return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)]
-}
-
 export class Node extends BaseNode {
     static id         = "donator"
     static display    = "Donator"
@@ -19,6 +11,10 @@ export class Node extends BaseNode {
 
     constructor() {
         super()
+        const size = this.getSize()
+        const width = size[0] - 10
+        const height = 20
+        this.addInteractableRegion('#press', size[0] / 2 - width / 2, size[1] / 2 - height / 2, width, height)
         this.addConnectionPoint('output', 'left', '#out1', 'The user id of the user that bought it')
         this.addConnectionPoint('output', 'left', '#out2', 'The user id of the user that bought it')
 
@@ -26,56 +22,24 @@ export class Node extends BaseNode {
         this.cooldown = false
     }
 
-    isHovering(x, y) {
-        const hit = super.isHovering(x, y)
-
-        // find distance
-        const size = this.getSize()
-        const pos = this.getRelativePointer()
-        const centerX = size[0] / 2
-        const centerY = size[1] / 2
-        const width = size[0] - 10
-        const height = 20
-
-        if (this.isHoveringRectangle(pos, centerX - width / 2, centerY - height / 2, width, height)) {
-            return false
-        }
-        return hit
-    }
-
     update() {
         super.update()
+    }
 
-        if (this.pressed)
-            return
-
-        const isPressed = this.isPointerPressed()
-        if (!isPressed && this.cooldown)
-            this.cooldown = false
-        if (!isPressed)
-            return // "mouse" isn't pressed
-
-        if (this.cooldown)
-            return // under cooldown
-
-        // find distance
-        const size = this.getSize()
-        const pos = this.getRelativePointer()
-        const centerX = size[0] / 2
-        const centerY = size[1] / 2
-        const width = size[0] - 10
-        const height = 20
-
-        if (this.isHoveringRectangle(pos, centerX - width / 2, centerY - height / 2, width, height)) {
-            this.cooldown = true
-            this.pressed = true
-            for (let i = 0; i < 2; i++)
-                this.setConnectionPointValue(`#out${i + 1}`, 12345678)
-            this.schedule(() => {
+    input(action) {
+        switch (action) {
+            case '#press':
+                if (this.pressed)
+                    return
+                this.pressed = true
                 for (let i = 0; i < 2; i++)
-                    this.setConnectionPointValue(`#out${i + 1}`, 0)
-                this.pressed = false
-            }, 1)
+                    this.setConnectionPointValue(`#out${i + 1}`, 12345678)
+                this.schedule(() => {
+                    for (let i = 0; i < 2; i++)
+                        this.setConnectionPointValue(`#out${i + 1}`, 0)
+                    this.pressed = false
+                }, 1)
+                break
         }
     }
 

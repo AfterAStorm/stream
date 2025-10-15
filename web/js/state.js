@@ -260,7 +260,12 @@ export class EditorState {
         ]
         const speed = .75 + (this.heldKeys.includes('Shift') ? .75 : 0) - (this.heldKeys.includes('Control') ? .5 : 0)
         this.pan[0] += speed * delta * dir[0]// * (1 / this.scale)
-        this.pan[1] += speed * delta * dir[1]// * (1 / this.scale)
+        this.pan[1] += speed * delta * dir[1]// * (1 / this.scale)ik
+        if (this.isDragging) {
+            this.positionDelta[0] = -speed * delta * dir[0] * (this.scale)
+            this.positionDelta[1] = -speed * delta * dir[1] * (this.scale)
+            this.handleDrag()
+        }
     }
 
     handleDrag() {
@@ -293,6 +298,16 @@ export class EditorState {
                         subpoint[0] += this.positionDelta[0] * (1 / this.scale)
                         subpoint[1] += this.positionDelta[1] * (1 / this.scale)
                     })
+                }
+                else if (connection.visualPoints.length > 0 && connection.points.some(point => this.selectedNodes.includes(point.node))) {
+                    if (this.selectedNodes.includes(connection.points[0].node)) {
+                        connection.visualPoints[0][0] += this.positionDelta[0] * (1 / this.scale) 
+                        connection.visualPoints[0][1] += this.positionDelta[1] * (1 / this.scale) 
+                    }
+                    else {
+                        connection.visualPoints[connection.visualPoints.length - 1][0] += this.positionDelta[0] * (1 / this.scale) 
+                        connection.visualPoints[connection.visualPoints.length - 1][1] += this.positionDelta[1] * (1 / this.scale) 
+                    }
                 }
             })
             this.selectedNodes.forEach(node => {
@@ -404,6 +419,12 @@ export class EditorState {
                 }
             }
         }
+        else if (this.creatingConnection != null) {
+            this.creatingConnection.visualPoints.push([
+                this.position[0] * (1 / this.scale) - this.pan[0],
+                this.position[1] * (1 / this.scale) - this.pan[1]
+            ]) // add a point
+        }
         else if (connections.length > 0 && this.selectedNodes.length == 0 && this.canConnect()) {
             const connection = connections[0]
             const subpointIndex = connection.getHoveringSubPoint(...this.position)
@@ -421,17 +442,11 @@ export class EditorState {
             }
             if (this.deleteMode.checked) {
                 this.selectedConnections.forEach(c => {
-                    this.flow.cutConnection(c)
+                    this.editor.flow.cutConnection(c)
                 })
                 this.selectedConnections = []
                 this.selectedSubPoints = []
             }
-        }
-        else if (this.creatingConnection != null) {
-            this.creatingConnection.visualPoints.push([
-                this.position[0] * (1 / this.scale) - this.pan[0],
-                this.position[1] * (1 / this.scale) - this.pan[1]
-            ]) // add a point
         }
         else if (nodes.length > 0 && this.canSelect()) { // try to select nodes
             // copy list/create new one
@@ -476,7 +491,7 @@ export class EditorState {
                 this.creatingConnection.visualPoints.splice(this.creatingConnection.visualPoints.length - 1, 1)
             }
             else {
-                this.flow.cutConnection(this.creatingConnection)
+                this.editor.flow.cutConnection(this.creatingConnection)
                 this.creatingConnection = null
                 this.selectedNodes = []
                 this.selectedConnections = []
@@ -489,7 +504,7 @@ export class EditorState {
                 const connections = this.selectedNodes
                     .flatMap(node => this.editor.flow.getConnectionsTo(node))
                     .filter((node, index, array) => array.indexOf(node) == index)
-                this.selectedNodes.forEach(node => this.flow.removeNode(node))
+                this.selectedNodes.forEach(node => this.editor.flow.removeNode(node))
                 this.addHistory('delete', {nodes: this.selectedNodes, connections: connections, subpoints: []})
                 this.selectNodes([])
             }
@@ -504,7 +519,10 @@ export class EditorState {
                     removedSubpoints.push([connection, subpoint, deleted]) // conn, index, pos
                 }
                 else {
-                    this.flow.cutConnection(connection)
+                    connection.points.filter(p => p.type == "input").forEach(p => {
+                        p.node.invalidatePoint(p.id)
+                    })
+                    this.editor.flow.cutConnection(connection)
                     removedConnections.push(connection)
                 }
             })
@@ -517,6 +535,7 @@ export class EditorState {
             this.selectedConnections = []
             this.selectNodes([])
         }
+        this.handleSubflowDelete()
     }
 
     handleRotate() {
@@ -565,6 +584,8 @@ export class EditorState {
 
             for (var node of this.selectedNodes) {
                 const dupe = new this.editor.flow.nodeDefinitions[node.id]()
+                dupe.flow = this.editor.main_flow
+                dupe.subflow = this.editor.flow
                 dupe.deserialize(JSON.parse(JSON.stringify(node.serialize())))
                 dupe.position[0] += 25
                 dupe.position[1] += 25
@@ -599,7 +620,7 @@ export class EditorState {
                 this.creatingConnection = new connection.constructor(connection.a, null)
                 this.creatingConnection.color = connection.color
                 for (let i = 0; i < subpoint + 1; i++) {
-                    this.creatingConnection.visualPoints.push(connection.visualPoints[i])
+                    this.creatingConnection.addPoint(...connection.visualPoints[i])
                 }
                 //connection.visualPoints.forEach(point => this.creatingConnection.visualPoints.push(point))
                 this.editor.flow.connections.push(this.creatingConnection)
@@ -671,8 +692,18 @@ export class EditorState {
         this.selectionStart = null
     }
 
+    handleNodeInputs() {
+        for (const node of this.editor.flow.nodes) {
+            if (!this.selectedNodes.includes(node) && node.sinkInput())
+                return true
+        }
+        return false
+    }
+
     updateInputs() {
         if (this.selectionStart == null && this.wasKeybindPressed('select')) {
+            if (this.handleNodeInputs())
+                return // sink
             this.handleSelect()
         }
         if (this.isKeybindHeld('delete')) {
@@ -690,7 +721,7 @@ export class EditorState {
 
         if (this.creatingNode != null && !this.isKeybindHeld('move') && this.inputType != 'touch') {
             this.selectNodes([])
-            this.flow.removeNode(this.creatingNode)
+            this.editor.flow.removeNode(this.creatingNode)
             this.creatingNode = null
         }
     }
@@ -786,7 +817,7 @@ export class EditorState {
             const connections = this.selectedNodes
                         .flatMap(node => this.editor.flow.getConnectionsTo(node))
                         .filter((node, index, array) => array.indexOf(node) == index)
-            this.selectedNodes.forEach(node => this.flow.removeNode(node))
+            this.selectedNodes.forEach(node => this.editor.flow.removeNode(node))
             this.addHistory('delete', {nodes: this.selectedNodes, connections: connections, subpoints: []})
             this.selectNodes([])
         }
@@ -800,7 +831,7 @@ export class EditorState {
                     removedSubpoints.push([connection, subpoint, deleted]) // conn, index, pos
                 }
                 else {
-                    this.flow.cutConnection(connection)
+                    this.editor.flow.cutConnection(connection)
                     removedConnections.push(connection)
                 }
             })
@@ -813,6 +844,46 @@ export class EditorState {
             this.selectedPoints = []
             this.selectedSubPoints = []
         }
+        this.handleSubflowDelete()
+    }
+
+    handleSubflowDelete() {
+        if (!this.editor.main_flow.subflows.includes(this.editor.flow)) {
+            // isn't subflow
+            return
+        }
+        const sf = this.editor.flow
+
+        if (sf.nodes.length != 0) {
+            return // isn't deleted
+        }
+        const index = this.editor.main_flow.subflows.indexOf(this.editor.flow)
+        console.warn('DELETING SUBFLOW AT', index)
+        this.changeFlows(this.editor.main_flow)
+        const fix_flow = (flow) => {
+            flow.nodes.filter(n => n.id == 'subflow_node' && n.subflow_index >= index).forEach(n => {
+                if (n.subflow_index == index)
+                    n.reset()
+                else {
+                    console.log('MOVE', n, 'BACK')
+                    n.subflow_index -= 1
+                    //n.refresh() // don't need to re-reference
+                }
+            })
+        }
+        fix_flow(this.editor.main_flow)
+        this.editor.main_flow.subflows.forEach(fix_flow)
+        
+        this.editor.main_flow.subflows.splice(index, 1)
+    }
+
+    changeFlows(newFlow) {
+        this.editor.flow.revise()
+        this.editor.flow.editorState = this.serialize()
+        this.editor.flow = newFlow
+        this.deserialize(newFlow.editorState)
+        this.refreshSidebar()
+        this.selectNodes([])
     }
 
     /**
@@ -847,6 +918,18 @@ export class EditorState {
     onKeyDown = (event) => {
         if (event.repeat)
             return
+        /*if (event.code.toLocaleLowerCase() == 'keyt') {
+            const activeFlow = this.editor.flow
+            console.log('active:')
+            if (activeFlow == this.editor.flow1) {
+                this.editor.flow = this.editor.flow2
+                console.log('swap to 2')
+            }
+            else {
+                this.editor.flow = this.editor.flow1
+                console.log('swap to 1')
+            }
+        }*/
         Object.values(this.keybinds).forEach(kb => {if (!kb.isMouse() && event.code.toLowerCase() == kb.code) kb.press()})
         if (!this.heldKeys.includes(event.code.toLowerCase()))
             this.heldKeys.push(event.code.toLowerCase())
@@ -913,20 +996,27 @@ export class EditorState {
 
     onSearchChanged = () => {
         const text = this.searchBox.value
-        if (text.length == 0) {
-            this.searchItems.forEach(div => {
-                div.classList.toggle('search-hidden', false)
-            })
+        const term = text.length == 0 ? null : text
+        this.itemCategories.forEach(category => category.search(term))
+    }
+
+    handleCreate = (node) => {
+        if (this.creatingNode != null) {
+            this.selectNodes([])
+            this.editor.flow.removeNode(this.creatingNode)
+            this.creatingNode = null
+            return
         }
-        else {
-            this.searchItems.forEach(div => {
-                const hidden = !div.querySelector('span').innerText.toLowerCase().includes(text.toLowerCase())
-                div.classList.toggle('search-hidden', hidden)
-            })
-        }
+        this.creatingNode = new node()
+        this.creatingNode.flow = this.editor.main_flow
+        this.creatingNode.subflow = this.editor.flow
+        this.creatingNode.position[0] = -100000000000
+        this.editor.flow.nodes.push(this.creatingNode)
+        this.selectNodes([this.creatingNode])
     }
 
     onFlowLoad = () => {
+        //console.warn('onFlowLoad')
         const sidebar = document.querySelector('#sidebar')
         const flow = this.editor.flow
 
@@ -937,7 +1027,7 @@ export class EditorState {
         const searchBox = document.createElement('input')
         this.searchBox = searchBox
         searchBox.addEventListener('input', () => this.onSearchChanged())
-        this.searchItems = []
+        this.itemCategories = []
 
         searchBox.type = 'search'
         searchBox.autocapitalize = 'no'
@@ -953,81 +1043,126 @@ export class EditorState {
             .filter((val, ind, arr) => arr.indexOf(val) == ind)
             .sort((a, b) => a.localeCompare(b))
 
+        const bind = this.keybinds.move
         categories.forEach(cat => {
-            const div = document.createElement('div')
-            div.classList.add('category')
-            div.innerHTML = `<span>${cat}</span>`
-            sidebar.appendChild(div)
-            const items = document.createElement('div')
-            items.classList.add('category-items')
-            sidebar.appendChild(items)
-
-            const categoryElements = []
 
             const nodes = Object.values(flow.nodeDefinitions)
                 .filter(nd => nd.category == cat)
                 .sort((a, b) => a.display.localeCompare(b.display))
-            nodes.forEach(nd => {
-                const div = document.createElement('div')
-                div.classList.add('category-item')
-                div.innerHTML = `<img width="40" height="40"
-    src="${this.parsePath(nd.icon)}"><span>${nd.display}</span>`
 
-                const create = () => {
-                    if (this.creatingNode != null) {
-                        this.selectNodes([])
-                        this.flow.removeNode(this.creatingNode)
-                        this.creatingNode = null
-                        return
-                    }
-                    this.creatingNode = new nd()
-                    this.creatingNode.position[0] = -100000000000
-                    this.editor.flow.nodes.push(this.creatingNode)
-                    this.selectNodes([this.creatingNode])
+            this.itemCategories.push(new NodeCategory(sidebar, cat, nodes.map(n => {
+                n.icon = this.parsePath(n.icon)
+                return n
+            }), this, bind, this.handleCreate))
+        })
+        //this.testMake()
+        this.refreshSidebar()
+    }
+
+    refreshSidebar() {
+        this.itemCategories.forEach(category => {
+            category.children.forEach(child => {
+                if (child[2] !== undefined) {
+                    category.toggleChild(child, child[2](this))
                 }
-                
-                const bind = this.keybinds.move
-
-                div.addEventListener('touchstart', e => {
-                    if (this.canSelect())
-                        create()
-                })
-
-                div.addEventListener('pointerdown', e => {
-                    this.inputType = e.pointerType
-                    if (this.canSelect() && div.matches(':hover') && bind.isMouse() && (bind.code & e.buttons) != 0) {
-                        create()
-                    }
-                })
-
-                div.addEventListener('pointerover', () => {
-                    this.hoveredNodeType = nd.id
-                    this.hoverTime = Date.now()
-                })
-
-                div.addEventListener('pointerleave', () => {
-                    if (this.hoveredNodeType == nd.id) {
-                        this.hoveredNodeType = null
-                        this.hoverTime = null
-                    }
-                })
-
-                div.addEventListener('keydown', e => {
-                    if (this.canSelect() && div.matches(':hover') && !bind.isMouse() && bind.code == e.code.toLowerCase()) {
-                        create()
-                    }
-                })
-
-                this.searchItems.push(div)
-                items.appendChild(div)
-                categoryElements.push(div)
             })
+        })
+    }
 
-            var toggle = true
-            div.addEventListener('click', () => {
-                toggle = !toggle
-                items.classList.toggle('minimized', !toggle)
-            })
+    testMake() {
+        /*const subflow = this.editor.flow.subflows[0]
+        subflow.loadFrom(this.editor.flow)
+        subflow.deserialize({
+            
+        })*/
+
+        this.editor.load({
+            flow: 'oaklands',
+            subflows: [
+                {
+                    name: 'test',
+                    nodes: [
+                        {
+                            position: [
+                                500, 500
+                            ],
+                            rotation: 0,
+                            id: 'subflow_input'
+                        },
+                        {
+                            position: [
+                                1000, 500
+                            ],
+                            rotation: 0,
+                            id: 'subflow_output'
+                        }
+                    ],
+                    connections: [
+                        {
+                            points: [
+                                {
+                                    "node": 0,
+                                    "id": "#output"
+                                },
+                                {
+                                    "node": 1,
+                                    "id": "#input"
+                                }
+                            ],
+                            visualPoints: [],
+                            color: '#ea3030',
+                            id: 'wire'
+                        }
+                    ]
+                }
+            ],
+            nodes: [
+                {
+                    position: [300, 300],
+                    id: 'button'
+                },
+                {
+                    position: [500, 300],
+                    id: 'subflow_node',
+                    subflow: 0
+                },
+                {
+                    position: [700, 300],
+                    id: 'lcd'
+                },
+            ],
+            connections: [
+                {
+                    points: [
+                        {
+                            'node': 0,
+                            'id': '#pressed'
+                        },
+                        {
+                            'node': 1,
+                            'id': '#in1'
+                        }
+                    ],
+                    visualPoints: [],
+                    color: '#ea3030',
+                    id: 'wire'
+                },
+                {
+                    points: [
+                        {
+                            'node': 1,
+                            'id': '#out1'
+                        },
+                        {
+                            'node': 2,
+                            'id': '#color'
+                        }
+                    ],
+                    visualPoints: [],
+                    color: '#ea3030',
+                    id: 'wire'
+                },
+            ]
         })
     }
 
@@ -1070,9 +1205,11 @@ export class EditorState {
      * @param {HTMLCanvasElement} canvas 
      */
     hook(editor) {
+        window.state = this
         this.editor = editor
         editor.flow.onload = this.onFlowLoad
         const canvas = editor.canvas
+        this.canvas = canvas
         document.oncontextmenu = e => e.preventDefault() // prevent save image/etc from popping up
         canvas.addEventListener('pointerdown', this.onPointerDown)
         document.addEventListener('pointerdown', this.onGlobalPointerDown)
@@ -1366,5 +1503,104 @@ export class EditorState {
                 drawProfile(getProfiler())
             })
         })
+    }
+}
+
+class NodeCategory {
+    /**
+     * 
+     * @param {Element} parent The sidebar, generally
+     * @param {string} category The category name
+     * @param {*} items 
+     * @param {EditorState} hoverDump Where to put and check hover info
+     * @param {*} bind
+     * @param {*} handleCreate
+     */
+    constructor(parent, category, items, hoverDump, bind, handleCreate) {
+        this.parent = parent
+        this.visible = true
+        this.children = []
+        this.hoverDump = hoverDump
+
+        const categoryDiv = document.createElement('div')
+        categoryDiv.classList.add('category')
+        categoryDiv.innerHTML = `<span>${category}</span>`
+        
+        const container = document.createElement('div')
+        container.classList.add('category-items')
+        this.container = container
+
+        categoryDiv.addEventListener('click', () => {
+            this.minimize(!this.visible)
+        })
+
+        for (const item of items) {
+            const div = document.createElement('div')
+            div.classList.add('category-item')
+            div.innerHTML = `<img width="40" height="40"
+            src="${item.icon}"><span>${item.display}</span>`
+
+            div.addEventListener('touchstart', e => {
+                //if (this.canSelect())
+                    handleCreate(item)
+            })
+
+            div.addEventListener('pointerdown', e => {
+                this.hoverDump.inputType = e.pointerType
+                if (/*this.canSelect() &&*/ div.matches(':hover') && bind.isMouse() && (bind.code & e.buttons) != 0) {
+                    handleCreate(item)
+                }
+            })
+
+            div.addEventListener('pointerover', () => {
+                this.hoverDump.hoveredNodeType = item.id
+                this.hoverDump.hoverTime = Date.now()
+            })
+
+            div.addEventListener('pointerleave', () => {
+                if (this.hoverDump.hoveredNodeType == item.id) {
+                    this.hoverDump.hoveredNodeType = null
+                    this.hoverDump.hoverTime = null
+                }
+            })
+
+            div.addEventListener('keydown', e => {
+                if (/*this.canSelect() &&*/ div.matches(':hover') && !bind.isMouse() && bind.code == e.code.toLowerCase()) {
+                    handleCreate(item)
+                }
+            })
+
+            container.appendChild(div)
+            this.children.push([item.display, div, item.placeable])
+        }
+        
+        this.parent.appendChild(categoryDiv)
+        this.parent.appendChild(container)
+    }
+
+    _minimized(visible) {
+        this.container.classList.toggle('minimized', !visible)
+    }
+
+    minimize(visible) {
+        this.visible = visible
+        this._minimized(visible)
+    }
+
+    search(term) {
+        if (term) // make sure items show up even if minimized while searching; term is null when empty
+            this._minimized(true)
+        else
+            this._minimized(this.visible)
+        this.children.forEach(child => {
+            if (term == null)
+                child[1].classList.toggle('search-hidden', false)
+            else
+                child[1].classList.toggle('search-hidden', !child[0].toLowerCase().includes(term.toLowerCase()))
+        })
+    }
+
+    toggleChild(child, toggle) {
+        child[1].classList.toggle('minimized', !toggle)
     }
 }

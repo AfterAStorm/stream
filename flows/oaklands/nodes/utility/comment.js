@@ -11,6 +11,7 @@ export class Node extends BaseNode {
 
     constructor() {
         super()
+        this.addInteractable('#edit', 'bottom', 0.5, 'edit', 20, "20px 'Material Symbols Outlined'")
 
         //this.cached = true
 
@@ -32,24 +33,15 @@ export class Node extends BaseNode {
 
     update() {
         super.update()
+    }
 
-        // changing value
-        const isPressed = this.isPointerPressed()
-        if (!isPressed && this.cooldown)
-            this.cooldown = false
-        if (!isPressed)
-            return // "mouse" isn't pressed
-
-        if (this.cooldown)
-            return // ignore wehn under cooldown
-
-        const size = this.getSize()
-        const pos = this.getRelativePointer()
-        if (this.isHoveringRectangle(pos, size[0] / 2 - 10, size[1], 20, 20)) {
-            this.cooldown = true
-            this.getUserTextInput(this.comment).then(v => {
-                this.comment = v
-            })
+    input(action) {
+        switch (action) {
+            case "#edit":
+                this.getUserTextInput(this.comment).then(v => {
+                    this.comment = v
+                })
+                break
         }
     }
 
@@ -70,7 +62,7 @@ export class Node extends BaseNode {
         const centerY = size[1] / 2
         
         // edit icon
-        context.save()
+        /*context.save()
         context.beginPath()
         context.rect(0, size[1], size[0], 40)
         context.clip()
@@ -90,8 +82,11 @@ export class Node extends BaseNode {
         context.textAlign = 'center'
         context.textBaseline = 'middle'
         context.font = '20px \'Material Symbols Outlined\''
-        context.fillText('edit', centerX, size[1] + 10)
+        context.fillText('edit', centerX, size[1] + 10)*/
 
+        context.fillStyle = '#000'
+        context.textAlign = 'center'
+        context.textBaseline = 'middle'
         context.font = '20px monospace'
         const commentWidth = context.measureText(this.comment)
         // this is technically an illegal action, and should be handled in update()

@@ -21,11 +21,13 @@ class Editor {
     constructor(canvas) {
         this.canvas = canvas
         this.context = canvas.getContext('2d')
-        this.flow = new Flow()
+        this.main_flow = new Flow() // core flow, contains subflows; (.subflows)-- managed with setting .flow
+        this.flow = this.main_flow // active flow
         this.state = new EditorState()
         this.state.hook(this)
 
         this.lastTimestamp = 0
+        this.lastDraw = 0
         this.delta = 0
         
         requestAnimationFrame(this.loop)
@@ -42,14 +44,16 @@ class Editor {
         while (this.delta >= millisecondsPerUpdate /*&& !(this.state.debug && context.editor.pause)*/) {
             upprofiler.group(`update ${updates}`)
             this.delta -= millisecondsPerUpdate
-            this.flow.update(this.state)
+            this.main_flow.update(this.state)
+            if (this.flow != this.main_flow)
+                this.flow.update(this.state) // for editing subflows, we need to make sure the nodes are working correctly :D
             updates += 1
             upprofiler.close()
             if (updates > 9) {
                 console.warn('>=10 updates in a single frame, aborting')
                 this.delta = 0
+                break
             }
-            break
         }
         
         if (upprofiler.groupDepth > 0) {
@@ -208,7 +212,10 @@ class Editor {
         await this.update(delta)
     
         // attempt draw
-        await this.draw(delta)
+        if (timestamp > this.lastDraw + 1/60) {
+            this.lastDraw = timestamp
+            await this.draw(delta)
+        }
         
         // profile
         profiler.log()
@@ -220,11 +227,13 @@ class Editor {
     load(shareCompressedData) { // "decompress/deserialize"
         const saveState = shareCompressedData instanceof Object ? shareCompressedData : decompress(shareCompressedData)
         this.state.deserialize(saveState)
-        this.flow.deserialize(saveState)
+        this.main_flow.deserialize(saveState)
+        this.flow = this.main_flow
+        //console.log(this.main_flow, saveState)
     }
 
     save() { // "serialize/compress"
-        const data = this.flow.serialize()
+        const data = this.main_flow.serialize()
         Object.entries(this.state.serialize()).forEach(pair => data[pair[0]] = pair[1])
 
         return compress(data)

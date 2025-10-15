@@ -11,6 +11,7 @@ export class Node extends BaseNode {
 
     constructor() {
         super()
+        this.addInteractable('#config', 'bottom', .5, '1', this.getSize()[0] - 40)
         this.addConnectionPoint('output', 'right', '#result', 'Clock Signal, on and off x times per second\n(the game actually treats this incorrectly I think, I believe it\'s supposed to be x2 faster)\n**Outputs: ⚡ 10')
         this.setConnectionPointValue('#result', 0)
 
@@ -30,6 +31,8 @@ export class Node extends BaseNode {
     deserialize(data) {
         super.deserialize(data)
         this.hertz = data.hertz
+        this.setInteractableText('#config', this.hertz)
+        this.averageSecondsBetweenClock = 1 / this.hertz * 1000
     }
 
     _schedule() {
@@ -48,7 +51,7 @@ export class Node extends BaseNode {
            this.averageSecondsBetweenClock -= this.averageSecondsBetweenClock / 50
            this.averageSecondsBetweenClock += (now - this.lastClock) / 50
            this.lastClock = now
-        }, 1 / (this.hertz) + this.editor.flow.updateSpeed * 2)
+        }, 1 / (this.hertz)) //+ this.editor.flow.updateSpeed * 2)
     }
 
     update() {
@@ -66,28 +69,19 @@ export class Node extends BaseNode {
             this._schedule()
             this.scheduled = true
         }
+    }
 
-        // changing value
-        const isPressed = this.isPointerPressed()
-        if (!isPressed && this.cooldown)
-            this.cooldown = false
-        if (!isPressed)
-            return // "mouse" isn't pressed
-
-        if (this.cooldown)
-            return // ignore wehn under cooldown
-
-        // find distance
-        const size = this.getSize()
-        const pos = this.getRelativePointer()
-        if (this.isHoveringRectangle(pos, 20, size[1], size[0] - 20, 20)) {
-            this.cooldown = true
-            this.getUserTextInput(this.hertz).then(v => {
-                this.hertz = parseInt(v)
-                if (Number.isNaN(this.hertz))
-                    this.hertz = 1
-                this.averageSecondsBetweenClock = 1 / this.hertz * 1000
-            })
+    input(action) {
+        switch (action) {
+            case '#config':
+                this.getUserTextInput(this.hertz).then(v => {
+                    this.hertz = parseInt(v)
+                    if (Number.isNaN(this.hertz))
+                        this.hertz = 1
+                    this.averageSecondsBetweenClock = 1 / this.hertz * 1000
+                    this.setInteractableText('#config', this.hertz)
+                })
+                break
         }
     }
 
@@ -101,28 +95,6 @@ export class Node extends BaseNode {
         
         const centerX = size[0] / 2
         const centerY = size[1] / 2
-
-        // draw value
-        context.save()
-        context.rect(0, size[1], size[0], 40)
-        context.clip()
-
-        context.beginPath()
-        context.roundRect(20, size[1] - 20, size[0] - 40, 40, 10)
-        context.fill()
-        
-        context.fillStyle = '#ddd'
-        context.beginPath()
-        context.roundRect(21, size[1] - 21, size[0] - 42, 38, 10)
-        context.fill()
-        
-        context.restore()
-
-        context.fillStyle = '#000'
-        context.textAlign = 'center'
-        context.textBaseline = 'middle'
-        context.font = '20px monospace'
-        context.fillText(this.hertz, centerX, size[1] + 10)
 
         // draw stuff
         context.fillStyle = 'black'

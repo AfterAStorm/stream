@@ -2,6 +2,15 @@
 
 import { BaseNode } from "../../../node.js"
 
+const OPERATION_CHARACTERS = [
+    'n/a',
+    '+',
+    '-',
+    'x',
+    '÷',
+    '^'
+]
+
 export class Node extends BaseNode {
     static id         = "computer"
     static display    = "Calculator"
@@ -11,6 +20,7 @@ export class Node extends BaseNode {
 
     constructor() {
         super()
+        this.addInteractable('#config', 'bottom', .5, '+', this.getSize()[0] - 40)
         this.addConnectionPoint('input', 'left', '#left', 'Left Input, x of x op y')
         this.addConnectionPoint('input', 'left', '#right', 'Right Input, y of x op y')
         this.addConnectionPoint('output', 'right', '#result', 'Operation Result, x (+/-/*/÷/^) y')
@@ -25,7 +35,7 @@ export class Node extends BaseNode {
         4 = div
         5 = exp
         */
-        this.mode = 1
+        this.mode = 1 // why it doesn't start at zero? no idea
     }
 
     serialize() {
@@ -37,6 +47,7 @@ export class Node extends BaseNode {
     deserialize(data) {
         super.deserialize(data)
         this.mode = data.mode
+        this.setInteractableText('#config', OPERATION_CHARACTERS[this.mode])
     }
 
     _math(a, b) {
@@ -66,27 +77,17 @@ export class Node extends BaseNode {
         if (setOutput != currentOutput) {
             this.setConnectionPointValue('#result', setOutput)
         }
+    }
 
-        // changing value
-        const isPressed = this.isPointerPressed()
-        if (!isPressed && this.cooldown)
-            this.cooldown = false
-        if (!isPressed)
-            return // "mouse" isn't pressed
-
-        if (this.cooldown)
-            return // ignore wehn under cooldown
-
-        // find distance
-        const size = this.getSize()
-        const pos = this.getRelativePointer()
-        //if (pos[0] >= 20 && pos[0] <= size[0] - 20 && pos[1] >= size[1] && pos[1] <= size[1] + 20) { // if less than radius
-        if (this.isHoveringRectangle(pos, 20, size[1], size[0] - 40, 20)) {
-            this.cooldown = true
-            this.mode += 1
-            if (this.mode > 5)
-                this.mode = 1
-            this.invalidate()
+    input(action) {
+        switch (action) {
+            case '#config':
+                this.mode += 1
+                if (this.mode > 5)
+                    this.mode = 1
+                this.setInteractableText('#config', OPERATION_CHARACTERS[this.mode])
+                this.invalidate()
+                break
         }
     }
 
@@ -106,50 +107,12 @@ export class Node extends BaseNode {
         const centerX = size[0] / 2
         const centerY = size[1] / 2
 
-        // draw value
-        context.save()
-        context.rect(0, size[1], size[0], 40)
-        context.clip()
-
-        context.beginPath()
-        context.roundRect(20, size[1] - 20, size[0] - 40, 40, 10)
-        context.fill()
-        
-        context.fillStyle = '#ddd'
-        context.beginPath()
-        context.roundRect(21, size[1] - 21, size[0] - 42, 40, 10)
-        context.fill()
-        
-        context.restore()
-
-        context.fillStyle = '#000'
-        context.textAlign = 'center'
-        context.textBaseline = 'middle'
-        context.font = '20px monospace'
-        var character = '+'
-        switch (this.mode) {
-            case 2:
-                character = '-'
-                break
-            case 3:
-                character = 'x'
-                break
-            case 4:
-                character = '÷'
-                break
-            case 5:
-                character = '^'
-                break
-        }
-
-        context.fillText(character, centerX, size[1] + 10)
-
         // draw stuff
         context.fillStyle = 'black'
         context.textAlign = 'center'
         context.textBaseline = 'middle'
         context.font = 'bold 40px monospace'
-        context.fillText(character, centerX, centerY)
+        context.fillText(OPERATION_CHARACTERS[this.mode], centerX, centerY)
 
         this.cacheDraw(orig)
     }

@@ -28,6 +28,7 @@ class ConnectionPoint {
     tooltip
     value
     active
+    invalidated = false
 
     position // point after rotation relative to 0, 0 of node's position
     staticPosition // point before rotation
@@ -36,6 +37,10 @@ class ConnectionPoint {
         Object.keys(values).forEach(k => {
             this[k] = values[k]
         })
+    }
+    
+    invalidate() {
+        this.invalidated = true
     }
 
     isHovering(x, y) {
@@ -66,7 +71,6 @@ export class BaseNode {
 
         // logic
         this.connectionPoints = []
-        this.connections = []
 
         this.scheduledTasks = []
 
@@ -75,8 +79,11 @@ export class BaseNode {
 
         this._connections = [] // set in editor caching stuff
 
+        this.interactables = []
+
         // other
-        this.editor = null // set before update
+        this.editor = null // set before update (EditorState)
+        this.flow = null // the main_flow, set at deserialize and handleCreate
         this.ghost = false // is the node a ghost? (preview)
         this.index = -1 // set before serialize
         this.debug = {
@@ -146,6 +153,8 @@ export class BaseNode {
     }
 
     getConnectionPointValue(indexOrId) {
+        if (indexOrId == null) // make sure we don't do any non-sense!
+            return null
         if (typeof(indexOrId) != Number)
             indexOrId = this.connectionPoints.findIndex(p => p.id == indexOrId)
         const point = this.connectionPoints[indexOrId]
@@ -158,6 +167,8 @@ export class BaseNode {
     }
 
     getLocalConnectionPointValue(indexOrId) {
+        if (indexOrId == null) // make sure we don't do any non-sense! (pt. 2)
+            return null
         if (typeof(indexOrId) != Number)
             indexOrId = this.connectionPoints.findIndex(p => p.id == indexOrId)
         const point = this.connectionPoints[indexOrId]
@@ -189,10 +200,12 @@ export class BaseNode {
     }
 
     getConnectionPointPositions() {
+        const points = this.connectionPoints.filter(p => p.active)
+
         // calculate totals
         const totals = {}
         const indexes = {}
-        for (const point of this.connectionPoints) {
+        for (const point of points) {
             totals[point.side] = (totals[point.side] || 1) + 1
             indexes[point.side] = 1
         }
@@ -208,7 +221,7 @@ export class BaseNode {
 
         // calculate positions
         const positions = []
-        for (const point of this.connectionPoints) {
+        for (const point of points) {
             const side = connectionPointSides[point.side]
             point.position = lerpV2(...side, indexes[point.side] / totals[point.side])
             point.staticPosition = [...point.position] // staticPosition is position before rotation
@@ -224,10 +237,148 @@ export class BaseNode {
         return positions
     }
 
+    invalidatePoint(indexOrId) {
+        const point = this.getConnectionPoint(indexOrId)
+        point.invalidate()
+    }
+
     /* VISUAL */
 
     getSize(scale=1) {
         return this.size.map(x => x * 100 * scale)
+    }
+
+    /* INPUT SYSTEM */
+
+    /**
+     * 
+     * @param {'top' | 'bottom'} side 
+     * @param {Number} anchor 
+     * @param {String} text
+     * @param {String} font
+     */
+    addInteractable(id, side, anchor, text, width=20, font='17px monospace') {
+        this.interactables.push({
+            type: 'bubble',
+            id,
+            side,
+            anchor,
+            text,
+            width,
+            font
+        })
+    }
+
+    addInteractableRegion(id, x, y, width, height) {
+        this.interactables.push({
+            type: 'region',
+            id,
+            x,
+            y,
+            width,
+            height
+        })
+    }
+
+    addInteractableCircle(id, x, y, radius) {
+        this.interactables.push({
+            type: 'circle',
+            id,
+            x,
+            y,
+            radius
+        })
+    }
+
+    setInteractableText(indexOrId, text) {
+        if (typeof(indexOrId) != Number)
+            indexOrId = this.interactables.findIndex(p => p.id == indexOrId)
+        this.interactables[indexOrId].text = text
+    }
+
+    calculateInteractable(interactable, size) {
+        const width = interactable.width
+        const height = 20
+        const x = size[0] * interactable.anchor - interactable.anchor * width
+        const y = interactable.side == 'top' ? -height : size[1]
+        return {x, y, width, height}
+    }
+
+    drawInteractables(context) {
+        const size = this.getSize()
+        for (const interactable of this.interactables.filter(i => i.type == 'bubble')) {
+            const {x, y, width, height} = this.calculateInteractable(interactable, size)
+            const isTop = interactable.side == 'top'
+
+            // clip
+            context.save()
+            context.beginPath()
+            context.rect(x, y, width, height)
+            context.clip()
+
+            context.fillStyle = '#fff'
+            context.beginPath()
+            context.rect(x, y + ((isTop ? 1 : 0) * height / 2), width, height / 2)
+            context.roundRect(x, y, width, height, 10)
+            context.fill()
+            
+            context.fillStyle = '#ddd'
+            context.beginPath()
+            context.rect(x + 1, y + (isTop * height / 2) + isTop, width - 2, height / 2 - (1 - isTop))
+            context.roundRect(x + 1, y - (isTop ? -1 : 1), width - 2, height, 10)
+            context.fill()
+            
+            context.fillStyle = '#000'
+            context.textAlign = 'center'
+            context.textBaseline = 'middle'
+            context.font = interactable.font
+            context.fillText(interactable.text, x + width / 2, y + height / 2)
+
+            context.restore()
+        }
+    }
+
+    sinkInput() {
+        if (this.interactables.length == 0)
+            return false
+        const size = this.getSize()
+        const pos = this.getRelativePointer()
+        var x, y, width, height
+        for (const interactable of this.interactables) {
+            switch (interactable.type) {
+                case 'circle':
+                    const dist = Math.sqrt(Math.pow(interactable.x - pos[0], 2) + Math.pow(interactable.y - pos[1], 2))
+                    if (dist <= interactable.radius) {
+                        this.input(interactable.id)
+                        return true
+                    }
+                    continue // don't do rectangle check
+                case 'region':
+                    ({x, y, width, height} = interactable)
+                    break
+                case 'bubble':
+                    ({x, y, width, height} = this.calculateInteractable(interactable, size))
+                    break
+                default:
+                    console.warn('Invalid interactable', interactable)
+                    continue
+            }
+            if (this.isHoveringRectangle(pos, x, y, width, height)) {
+                this.input(interactable.id)
+                return true
+            }
+        }
+        return false
+    }
+
+    input(action) { throw Error("Not implemented") } // overrideable
+
+    /**
+     * Defer callback to update "thread"
+     * @param {*} callback 
+     */
+    defer(callback) {
+        this.scheduleTicks(callback, 0)
     }
 
     /* USER INTERACTION */
@@ -281,9 +432,11 @@ export class BaseNode {
         return false*/
     }
 
-    async getUserTextInput(current) {
+    async getUserTextInput(current, title) {
         const modal = document.getElementById('text-input')
         const modalValue = document.getElementById('text-input-value')
+        const modalTitle = document.getElementById('text-input-title')
+        modalTitle.innerText = (title ?? 'Enter new value')  + ':'
         modalValue.value = current
         setTimeout(() => {
             modal.showModal()
@@ -296,9 +449,11 @@ export class BaseNode {
         })
     }
 
-    async getUserSelectionInput(values, val=0) { // values is STRING: NUMBER
+    async getUserSelectionInput(values, val=0, title) { // values is STRING: NUMBER
         const modal = document.getElementById('select-input')
         const modalValue = document.getElementById('select-input-value')
+        const modalTitle = document.getElementById('select-input-title')
+        modalTitle.innerText = (title ?? 'Select new value') + ':'
         modalValue.innerHTML = Object.entries(values).map((entry) => `<option value="${entry[1]}"${entry[1] == val ? ' selected' : ''}>${entry[0]}</option>`).join('')
         setTimeout(() => {
             modal.showModal()
@@ -371,17 +526,23 @@ export class BaseNode {
      */
     update() {
         var remove = []
-        for (const task of this.scheduledTasks) {
+        const tasks = new Array(...this.scheduledTasks.entries())
+        for (const entry of tasks) {
+            const task = entry[1]
             task[0] -= 1
             if (task[0] <= 0) {
                 task[1]()
-                remove.push(task)
+                remove.push(entry[0])
             }
         }
 
         remove.forEach(r => {
-            this.scheduledTasks.splice(this.scheduledTasks.indexOf(r), 1)
+            this.scheduledTasks.splice(r, 1)
         })
+
+        const invalidated = this.connectionPoints.filter(p => p.invalidated)
+        invalidated.forEach(p => p.invalidated = false)
+        invalidated.forEach(p => this.update(p.id))
     }
 
     invalidate() {
@@ -500,6 +661,7 @@ export class BaseNode {
 
         // draw connection points
         this.drawPoints(context)
+        this.drawInteractables(context)
         
         context.fillStyle = '#fff'
         return context

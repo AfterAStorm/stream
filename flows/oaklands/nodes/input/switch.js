@@ -11,6 +11,10 @@ export class Node extends BaseNode {
 
     constructor() {
         super()
+        const size = this.getSize()
+        const width = size[0] / 1.5
+        const height = size[1] / 2
+        this.addInteractableRegion('#press', size[0] / 2 - width / 2, size[1] / 2 - height / 2, width, height)
         this.addConnectionPoint('output', 'right', '#pressed', 'Switch Pressed\n**Outputs: ⚡ 10')
         this.setConnectionPointValue('#pressed', 0)
 
@@ -32,50 +36,17 @@ export class Node extends BaseNode {
         this.setConnectionPointValue('#pressed', this.pressed ? 10 : 0)
     }
 
-    // it's a bit off when rotated... but whatever
-
-    isHovering(x, y) {
-        const hit = super.isHovering(x, y)
-
-        // find distance
-        const size = this.getSize()
-        const pos = this.getRelativePointer()
-        const centerX = size[0] / 2
-        const centerY = size[1] / 2
-        const width = size[0] / 1.5
-        const height = size[1] / 2
-
-        if (this.isHoveringRectangle(pos, centerX - width / 2, centerY - height / 2, width, height)) {
-            return false
-        }
-        return hit
-    }
-
     update() {
         super.update()
+    }
 
-        const isPressed = this.isPointerPressed()
-        if (!isPressed && this.cooldown)
-            this.cooldown = false
-        if (!isPressed)
-            return // "mouse" isn't pressed
-
-        if (this.cooldown)
-            return // under cooldown
-
-        // find distance
-        const size = this.getSize()
-        const pos = this.getRelativePointer()
-        const centerX = size[0] / 2
-        const centerY = size[1] / 2
-        const width = size[0] / 1.5
-        const height = size[1] / 2
-
-        if (this.isHoveringRectangle(pos, centerX - width / 2, centerY - height / 2, width, height)) {
-            this.cooldown = true
-            this.pressed = !this.pressed
-            this.setConnectionPointValue('#pressed', this.pressed ? 10 : 0)
-            this.invalidate()
+    input(action) {
+        switch (action) {
+            case '#press':
+                this.pressed = !this.pressed
+                this.setConnectionPointValue('#pressed', this.pressed ? 10 : 0)
+                this.invalidate()
+                break
         }
     }
 

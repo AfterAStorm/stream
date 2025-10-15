@@ -11,6 +11,7 @@ export class Node extends BaseNode {
 
     constructor() {
         super()
+        this.addInteractable('#config', 'bottom', .5, '1', this.getSize()[0] - 40)
         this.addConnectionPoint('input', 'left', '#in', 'Input')
         this.addConnectionPoint('output', 'right', '#result', 'Sustained, acts as a sort of "queue", similiar to delay except 0 to x will be instant')
         this.setConnectionPointValue('#result', 0)
@@ -28,6 +29,7 @@ export class Node extends BaseNode {
     deserialize(data) {
         super.deserialize(data)
         this.delay = data.delay
+        this.setInteractableText('#config', this.delay)
     }
 
     update() {
@@ -43,32 +45,21 @@ export class Node extends BaseNode {
                 this.schedule(() => {
                     this.setConnectionPointValue('#result', input)
                 }, this.delay)
-                
         }
+    }
 
-        // changing value
-        const isPressed = this.isPointerPressed()
-        if (!isPressed && this.cooldown)
-            this.cooldown = false
-        if (!isPressed)
-            return // "mouse" isn't pressed
-
-        if (this.cooldown)
-            return // ignore wehn under cooldown
-
-        // find distance
-        const size = this.getSize()
-        const pos = this.getRelativePointer()
-        
-        if (this.isHoveringRectangle(pos, 20, size[1], size[0] - 20, 20)) {
-            this.cooldown = true
-            this.getUserTextInput(this.delay).then(v => {
-                this.delay = parseFloat(v)
-                if (Number.isNaN(this.delay))
-                    this.delay = 1
-                this.delay = Math.round(this.delay * 10) / 10
-                this.delay = Math.max(Math.min(this.delay, 300), 0)
-            })
+    input(action) {
+        switch (action) {
+            case '#config':
+                this.getUserTextInput(this.delay).then(v => {
+                    this.delay = parseFloat(v)
+                    if (Number.isNaN(this.delay))
+                        this.delay = 1
+                    this.delay = Math.round(this.delay * 10) / 10
+                    this.delay = Math.max(Math.min(this.delay, 300), 0)
+                    this.setInteractableText('#config', this.delay)
+                })
+                break
         }
     }
 
@@ -106,30 +97,6 @@ export class Node extends BaseNode {
         context.moveTo(centerX, centerY)
         context.lineTo(centerX - 6, centerY - 6)
         context.stroke()
-
-        // draw value
-        context.save()
-        context.beginPath()
-        context.rect(0, size[1], size[0], 40)
-        context.clip()
-
-        context.fillStyle = '#fff'
-        context.beginPath()
-        context.roundRect(20, size[1] - 20, size[0] - 40, 40, 10)
-        context.fill()
-        
-        context.fillStyle = '#ddd'
-        context.beginPath()
-        context.roundRect(21, size[1] - 21, size[0] - 42, 40, 10)
-        context.fill()
-        
-        context.restore()
-
-        context.fillStyle = '#000'
-        context.textAlign = 'center'
-        context.textBaseline = 'middle'
-        context.font = '20px monospace'
-        context.fillText(this.delay, centerX, size[1] + 10)
 
     }
 }

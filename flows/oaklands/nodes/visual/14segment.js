@@ -7,7 +7,7 @@ const colorMap = {
     1: '#fe191b',
     2: '#fee118',
     3: '#fefe88',
-    4: '#4bfe5ae',
+    4: '#4bfe5a',
     5: '#74f6fe',
     6: '#47fefe',
     7: '#fec1fe',

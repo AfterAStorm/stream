@@ -20,17 +20,24 @@ export class Node extends BaseNode {
         this.cooldown = false
     }
 
-    update() {
+    update(updatedValue) {
         super.update()
 
+        const value = this.getConnectionPointValue('#passthrough')
+        switch (updatedValue) {
+            case '#passthrough':
+                this.setConnectionPointValue('#result', value)
+                break
+        }
+
         // output
-        const currentOutput = this.getLocalConnectionPointValue('#result')
+        /*const currentOutput = this.getLocalConnectionPointValue('#result')
         var setOutput = this.getConnectionPointValue('#passthrough')
         
         if (setOutput != currentOutput) {
             this.setConnectionPointValue('#result', setOutput)
             this.invalidate()
-        }
+        }*/
     }
 
     /**

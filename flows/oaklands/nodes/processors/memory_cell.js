@@ -37,30 +37,30 @@ export class Node extends BaseNode {
         this.setConnectionPointValue('#result', this.value)
     }
 
-    update() {
+    update(updatedValue) {
         super.update()
 
-        const currentOutput = this.getLocalConnectionPointValue('#result')
-        const left = this.getConnectionPointValue('#left')
-        const right = this.getConnectionPointValue('#right')
-        if (left != this.lastLeft) {
-            this.lastLeft = left
-            if (left > 0 && this.value == 0) {
-                this.value = left
-                this.invalidated = true
-            }
-        }
-        if (right != this.lastRight) {
-            this.lastRight = right
-            if (right > 0 && this.value != 0) {
-                this.value = 0
-                this.invalidated = true
-            }
-        }
-        
-        var setOutput = this.value
-        if (setOutput != currentOutput) {
-            this.setConnectionPointValue('#result', setOutput)
+        const value = this.getConnectionPointValue(updatedValue)
+        switch (updatedValue) {
+            case "#left":
+                // this.getLocalConnectionPointValue('#result') // can use this.value for saving purposes
+                if (value > 0 && this.value == 0) {
+                    this.value = value
+                    this.invalidate()
+                    this.setConnectionPointValue('#result', this.value)
+                }
+                break
+            case "#right":
+                if (value > 0 && this.value != 0) {
+                    this.value = 0
+                    this.invalidate()
+                    this.setConnectionPointValue('#result', this.value)
+                }
+                break
+            default:
+                if (this.getLocalConnectionPointValue('#result') != this.value)
+                    this.setConnectionPointValue('#result', this.value)
+                break
         }
     }
 

@@ -19,34 +19,48 @@ export class Node extends BaseNode {
         this.pressed = false
         this.cooldown = false
         
-        this.lastLeft = 0
-        this.lastRight = 0
+        this.value = 0
+        this.gate = 0
 
         this.cached = true
     }
 
-    update() {
+    updateState() {
+        const current = this.getLocalConnectionPointValue('#result')
+        if (this.gate > 0) {
+            if (this.value != current) {
+                this.setConnectionPointValue('#result', this.value)
+            }
+        }
+        else {
+            if (current != 0) {
+                this.setConnectionPointValue('#result', 0)
+            }
+        }
+    }
+
+    update(updatedValue) {
         super.update()
 
-        const currentOutput = this.getLocalConnectionPointValue('#result')
-        var setOutput = 0
-        const right = this.getConnectionPointValue('#right')
-        const left = this.getConnectionPointValue('#left')
-        if (right > 0) {
-            setOutput = left
-        }
-        if (left != this.lastLeft) {
-            this.lastLeft = left
-            this.invalidate()
-        }
-        if (right != this.lastRight) {
-            this.lastRight = right
-            this.invalidate()
-        }
-        
-        if (setOutput != currentOutput) {
-            this.invalidate()
-            this.setConnectionPointValue('#result', setOutput)
+        const value = this.getConnectionPointValue(updatedValue)
+        switch (updatedValue) {
+            case "#left":
+                // this.getLocalConnectionPointValue('#result') // can use this.value for saving purposes
+                if (value != this.value) {
+                    this.value = value
+                    this.invalidate()
+                    this.updateState()
+                }
+                break
+            case "#right":
+                if (value != this.gate) {
+                    this.gate = value
+                    this.invalidate()
+                    this.updateState()
+                }
+                break
+            default:
+                break
         }
     }
 

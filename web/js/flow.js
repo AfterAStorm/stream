@@ -16,6 +16,11 @@ export class Flow {
         this.nodes = []
         this.connections = []
 
+        if (id != 1)
+            this.subflows = [
+                new Subflow(this)
+            ]
+
         this.loaded = false
         this.onload = null
     }
@@ -125,27 +130,32 @@ export class Flow {
             node.debug.updated = true
         }
         
-        if (hold && node.needsConnectionUpdate)
-            return node
-        if (node.needsConnectionUpdate) {
+        //if (hold && node.needsConnectionUpdate)
+        //    return node
+        if (node.needsConnectionUpdate && !node.hasUpdated) {
             //console.log('node.needsConnectionUpdate', node)
             //console.log(node, 'needsConnectionUpdate')
             node.needsConnectionUpdate = false
-            const connections = flow.connections.filter(c => node.connectionPoints.find(p => c.has(p)))
+            const connections = node._connections/*flow.connections.filter(c => node.connectionPoints.find(p => c.has(p)))*/
             const updating = []
             connections.filter(c => c.points.find(p => p.node == node).type == 'output').forEach(c => {
                 c.update()
+                if (depth > 0)
+                    return
+                c.value = c.nextValue ?? c.value
+                c.nextValue = null
                 c.points.forEach(p => {
                     if (p.node == node)
                         return
-                    p.node.hasUpdated = false
-                    const isUpdate = this._updateNode(p.node, depth + 1, true)
+                    p.node.hasUpdated = true//false
+                    p.node.needsSoftUpdate = false
+                    const isUpdate = p.node.update(p.id) ?? p.node//this._updateNode(p.node, depth + 1, true)
                     //console.log('> force update', p.node)
                     if (isUpdate != null && !updating.includes(isUpdate))
                         updating.push(isUpdate)
                 })
             })
-            updating.forEach(n => this._updateNode(n, depth + 1, false))
+            // updating.forEach(n => this._updateNode(n, depth + 1, false))
             /*connections.forEach(c => {
                 connections.needsUpdate = false
                 c.reset()
@@ -169,12 +179,13 @@ export class Flow {
     /**
      * Update node states
      */
-    update(editor) {
+    update(editor, filtered) {
         this.updateEditor(editor)
         upprofiler.group('sort priority')
         this.nodes.sort((a, b) => b.getPriority() - a.getPriority())
         upprofiler.close()
-        this.nodes.forEach(n => {
+        const nodes = filtered ?? this.nodes//filter != null ? this.nodes.filter(filter) : this.nodes
+        nodes.forEach(n => {
             n.needsSoftUpdate = true
             n.hasUpdated = false
             n.debug.depth = 0
@@ -184,7 +195,7 @@ export class Flow {
         this.updateNodeConnectionCaches()
         upprofiler.close()
         upprofiler.group('update nodes')
-        this.nodes.forEach(n => {
+        nodes.forEach(n => {
             upprofiler.group(`update ${n.display} node`)
             this._updateNode(n)
             upprofiler.close()
@@ -249,18 +260,37 @@ export class Flow {
         profiler.close()
     }
 
-    async deserialize(json) {
+    loadFrom(otherFlow) {
+        this.nodes = []
+        this.connections = []
+        this.connectionPointTypes = otherFlow.connectionPointTypes
+        this.nodeDefinitions = otherFlow.nodeDefinitions
+        this.connectionDefinitions = otherFlow.connectionDefinitions
+        this.loaded = true
+    }
+
+    async deserialize(json, main_flow) {
         const flow = this
-        if (flow.id != json.flow)
+        main_flow = main_flow ?? flow
+        if (flow.id != json.flow && json.flow != null)
             flow.loaded = false
         flow.id = json.flow
 
         flow.nodes = []
         flow.connections = []
+        flow.subflows = []
 
         if (!flow.loaded)
             await flow.load()
 
+        if (json.subflows && json.subflows.length > 0) {
+            json.subflows.forEach(subflow => {
+                const instance = new Subflow(this) // not main_flow since subflows should never be able to have subflows
+                instance.deserialize(subflow, main_flow)
+                flow.subflows.push(instance)
+            })
+        }
+        
         json.nodes.forEach(node => { // we assume this is in the correct order :p
             const def = flow.nodeDefinitions[node.id]
             if (def == null) {
@@ -269,6 +299,8 @@ export class Flow {
             }
 
             const created = new def()
+            created.flow = main_flow
+            created.subflow = this
             created.deserialize(node)
             flow.nodes.push(created)
         })
@@ -281,10 +313,65 @@ export class Flow {
 
             const created = new def()
             created.deserialize(connection, flow)
+            if (!created.a || !created.b)
+                return // damn
             flow.connections.push(created)
         })
 
         return this
+    }
+
+    createSubflow(name) {
+        if (this.parent != null)
+            return // prevent subflows from owning subflows
+        const sf = new Subflow(this)
+        if (this.subflows == null)
+            this.subflows = []
+        sf.deserialize({
+            name,
+            nodes: [
+                {
+                    id: 'subflow_input',
+                    position: [200, 200],
+                    description: 'Input 1'
+                },
+                {
+                    id: 'subflow_output',
+                    position: [400, 200],
+                    description: 'Output 1'
+                }
+            ],
+            connections: [
+                {
+                    points: [
+                        {
+                            node: 0,
+                            id: '#output'
+                        },
+                        {
+                            node: 1,
+                            id: '#input'
+                        }
+                    ],
+                    visualPoints: [],
+                    color: '#ea3030',
+                    id: 'wire'
+                }
+            ]
+        })
+        this.subflows.push(sf)
+    }
+
+    revise() {
+        // in case we ever need to do this (used in switching between flows)
+    }
+
+    deserializeState(json) {
+        json.nodes.forEach((node, i) => {
+            const existing = this.nodes.at(i)
+            if (existing)
+                existing.deserialize(node)
+        })
     }
 
     serialize() {
@@ -294,7 +381,91 @@ export class Flow {
             'nodes': this.nodes.map(n => n.serialize()),
             'connections': this.connections.map(c => c.serialize())
         }
+        if (this.subflows) {
+            json.subflows = this.subflows.map(sf => sf.serialize())
+        }
 
         return json
+    }
+}
+
+class SubflowRuntime {
+    /**
+     * @param {Subflow} subflow 
+     */
+    constructor(subflow) {
+        this.base = subflow
+        this.clone()
+        this.revision = subflow.revision
+        this.onupdate = null
+    }
+
+    serialize() {
+        return this.flow.serialize()
+    }
+
+    deserializeState(data) {
+        this.flow.deserializeState(data)
+    }
+
+    clone() {
+        //console.log('clone!')
+        this.flow = new Subflow(this.base.parent) // already .load()s
+        this.flow.deserialize(this.base.serialize(), this.base.parent) // "clone"-- very inefficient but easy!
+    }
+
+    update(editor, filter) {
+        if (this.revision != this.base.revision) {
+            // new version! update
+            this.revision = this.base.revision
+            console.log('update!', this)
+            this.clone()
+            if (this.onupdate)
+                this.onupdate()
+        }
+        this.flow.update(editor, filter)
+    }
+}
+
+class Subflow extends Flow {
+    /**
+     * 
+     * @param {Flow} parent 
+     */
+    constructor(parent) {
+        super(1)
+        this.name = 'test'
+        this.parent = parent
+        this.load()
+        this.revision = 0
+        this.editorState = {
+            pan: [0, 0],
+            scale: 1
+        }
+    }
+
+    serialize() {
+        const parent = super.serialize()
+        parent.name = this.name
+        parent.editorState = this.editorState
+        return parent
+    }
+
+    deserialize(json, main_flow) {
+        super.deserialize(json, main_flow)
+        this.name = json.name
+        this.editorState = json.editorState ?? this.editorState
+    }
+
+    load() {
+        this.loadFrom(this.parent)
+    }
+
+    createRuntime() {
+        return new SubflowRuntime(this)
+    }
+
+    revise() {
+        this.revision += 1
     }
 }

@@ -11,13 +11,15 @@ export class Node extends BaseNode {
 
     constructor() {
         super()
+        const size = this.getSize()
+        this.addInteractableCircle('#press', size[0] / 2, size[1] / 2, size[0] / 3)
         this.addConnectionPoint('output', 'right', '#pressed', 'Button Pressed\n**Outputs: ⚡ 10')
         this.setConnectionPointValue('#pressed', 0)
 
         this.pressed = false
     }
 
-    isHovering(x, y) {
+    /*isHovering(x, y) {
         const hit = super.isHovering(x, y)
 
         const pos = this.getRelative(x, y)
@@ -29,12 +31,12 @@ export class Node extends BaseNode {
             return false
         }
         return hit
-    }
+    }*/
 
     update() {
         super.update()
 
-        if (this.pressed)
+        /*if (this.pressed)
             return // under cooldown
 
         const isPressed = this.isPointerPressed()
@@ -54,6 +56,21 @@ export class Node extends BaseNode {
                 this.pressed = false
                 this.setConnectionPointValue('#pressed', 0)
             }, 1)
+        }*/
+    }
+
+    input(action) {
+        switch (action) {
+            case '#press':
+                if (this.pressed)
+                    return // ignore
+                this.pressed = true // debounce
+                this.setConnectionPointValue('#pressed', 10)
+                this.schedule(() => {
+                    this.pressed = false
+                    this.setConnectionPointValue('#pressed', 0)
+                }, 1)
+                break
         }
     }
 
@@ -69,7 +86,7 @@ export class Node extends BaseNode {
         context.fillStyle = this.pressed ? 'green' : 'red'
         context.strokeStyle = this.pressed ? 'grey' : 'maroon'
         context.beginPath()
-        context.arc(size[0] / 2, size[1] / 2, size[0] / 2 / 1.5, 0, Math.PI * 2)
+        context.arc(size[0] / 2, size[1] / 2, size[0] / 3, 0, Math.PI * 2)
         context.fill()
         context.stroke()
     }

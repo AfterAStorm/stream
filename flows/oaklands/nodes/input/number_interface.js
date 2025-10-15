@@ -11,6 +11,7 @@ export class Node extends BaseNode {
 
     constructor() {
         super()
+        this.addInteractable('#config', 'bottom', .5, '1', this.getSize()[0] - 40)
         this.addConnectionPoint('output', 'right', '#result', 'The user provided number\n**Outputs: ⚡ X')
         this.setConnectionPointValue('#result', 0)
 
@@ -29,6 +30,7 @@ export class Node extends BaseNode {
     deserialize(data) {
         super.deserialize(data)
         this.number = data.number ?? 0
+        this.setInteractableText('#config', this.number)
     }
 
     update() {
@@ -41,29 +43,19 @@ export class Node extends BaseNode {
         if (setOutput != currentOutput) {
             this.setConnectionPointValue('#result', setOutput)
         }
+    }
 
-        // changing value
-        const isPressed = this.isPointerPressed()
-        if (!isPressed && this.cooldown)
-            this.cooldown = false
-        if (!isPressed)
-            return // "mouse" isn't pressed
-
-        if (this.cooldown)
-            return // ignore wehn under cooldown
-
-        // find distance
-        const size = this.getSize()
-        const pos = this.getRelativePointer()
-        
-        if (this.isHoveringRectangle(pos, 20, size[1], size[0] - 40, 20)) {
-            this.cooldown = true
-            this.getUserTextInput(this.number).then(v => {
-                this.number = parseFloat(v)
-                if (Number.isNaN(this.number))
-                    this.number = 10
-                this.invalidate()
-            })
+    input(action) {
+        switch (action) {
+            case '#config':
+                this.getUserTextInput(this.number).then(v => {
+                    this.number = parseFloat(v)
+                    if (Number.isNaN(this.number))
+                        this.number = 10
+                    this.invalidate()
+                    this.setInteractableText('#config', this.number)
+                })
+                break
         }
     }
 

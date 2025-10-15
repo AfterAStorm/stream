@@ -98,7 +98,7 @@ export class Connection {
 
             const approxDist = fromDist + toDist
             const lineDist = distV2(subV2(from, to))
-            if (Math.abs(approxDist - lineDist) < .25)
+            if (Math.abs(approxDist - lineDist) < range)
                 return i - 1
         }
         return null
@@ -134,13 +134,41 @@ export class Connection {
         //    b.value += this.value
     }
 
+    ccw(x1, y1, x2, y2, x3, y3) {
+        return (y3 - y1) * (x2 - x1) > (y2 - y1) * (x3 - x1)
+    }
+
+    intersects(a, b, a2, b2) {
+        return this.ccw(...a, ...a2, ...b2) != this.ccw(...b, ...a2, ...b2) && this.ccw(...a, ...b, ...b2) != this.ccw(...a, ...b, ...b2)
+    }
+
     /**
      * @param {CanvasRenderingContext2D} context 
      */
     draw(context) {
-        this.ghost = this.points.some(p => p.node.ghost)
+        /*var draw = false
+        const spots = [...addV2(this.a.node.position, this.a.position)]
+        this.visualPoints.forEach(p => spots.push(...p))
+        if (this.b)
+            spots.push(...addV2(this.b.node.position, this.b.position))
+        for (let i = 0; i < spots.length; i += 2) {
+            const rel = this.getRelative(spots[i], spots[i + 1], 0, 0)
+            const scale = this.editor?.scale ?? 1
+            const inverseScale = 1 / scale
+            if (rel[0] < 0 && rel[0] > -this.editor.canvas.width * inverseScale && rel[1] < 0 && rel[1] > -this.editor.canvas.height * inverseScale) {
+                draw = true
+                break
+            }
+        }
+        if (!draw)
+            return
+*/
+        profiler.group('draw connection')
+        profiler.group('ghost check')
+        //this.ghost = this.points.some(p => p.node.ghost)
         if (this.ghost)
             context.globalAlpha = .5
+        profiler.swap('alpha check')
         if (
             (this.editor != null && this != this.editor.creatingConnection) && (
                 (this.editor.hoveredPoint != null && !this.points.includes(this.editor.hoveredPoint)) ||
@@ -150,6 +178,7 @@ export class Connection {
             context.globalAlpha = .2
         }
 
+        profiler.swap('draw')
         context.lineCap = 'round'
         context.lineJoin = 'round'
         context.lineWidth = 5
@@ -165,5 +194,7 @@ export class Connection {
         context.lineWidth = 3
         context.strokeStyle = this.color
         context.stroke()
+        profiler.close()
+        profiler.close()
     }
 }

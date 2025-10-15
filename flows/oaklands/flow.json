@@ -62,8 +62,12 @@
         "simulators/proximity_sensor",
         "simulators/chat",
         "simulators/music_note",
-        "simulators/speaker"
+        "simulators/speaker",
+
+        "subflow/input",
+        "subflow/output",
+        "subflow/subflow"
     ],
 
-    "updateSpeed": 0.03333333333
+    "updateSpeed": 0.01666666666
 }

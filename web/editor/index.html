@@ -5,6 +5,7 @@
         <link rel="stylesheet" href="../css/editor.css">
         <script language="javascript" src="../js/editor.js" type="module" async></script>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+        <link rel="icon" href="favicon.ico" />
         <meta name="viewport" content="user-scalable=0, maximum-scale=1, minimum-scale=1, width=device-width, initial-scale=1.0">
         <!-- meta gaming -->
         <meta name="title" content="stream">
@@ -31,13 +32,13 @@
         </dialog>
         <dialog id="text-input">
             <form method="dialog">
-                <p>Enter new value:</p>
+                <p id="text-input-title">Enter new value:</p>
                 <input id="text-input-value" type="text" onfocusout="this.parentElement.submit()" autocomplete="off" autofocus>
             </form>
         </dialog>
         <dialog id="select-input">
             <form method="dialog">
-                <p>Enter new value:</p>
+                <p id="select-input-title">Select new value:</p>
                 <select id="select-input-value" onfocusout="this.parentElement.submit()" oninput="this.parentElement.submit()" autofocus></select>
             </form>
         </dialog>
@@ -72,6 +73,12 @@
                 <h3>Saving & Sharing</h3>
                 <p>To save or share your creation, click the <span class="material-symbols-outlined">save</span> icon in the top right.</p>
                 <p>To view some examples, click the <span class="material-symbols-outlined">topic</span> icon in the top right.</p>
+                <h3>Subflows</h3>
+                <p>Subflows are a way to compact code into other flows, helps relieve stress on duplicating things tons of times-- still doesn't entirely remove the problem though</p>
+                <p>You enter a subflow by pressing the edit button, and leave by pressing the back button on the Input node</p>
+                <p>You delete a subflow by deleting every node in the subflow</p>
+                <p>You can rename the ports of the subflow by changing the text parts of the Input/Output nodes</p>
+                <p><b>Disclaimer: Everytime you edit a subflow, every instance of that subflow's state will be wiped (ex: a memory cell's current value)</b></p>
                 <h3>Connections</h3>
                 <p>You can delete connections with right click</p>
                 <p>You can add extra points by clicking and dragging anywhere on the connection</p>
@@ -247,7 +254,6 @@
             </canvas>
             <div id="edit-options">
                 <div>
-                    <span>Connection Color:</span>
                     <div id="connection-colors">
                         <div>
                             <div value="#ea3030"></div>

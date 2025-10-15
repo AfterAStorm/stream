@@ -38,6 +38,8 @@ export class Node extends BaseNode {
 
     constructor() {
         super()
+        this.addInteractable('#resolution', 'top', 0, '5x5', 80, '15px monospace')
+        this.addInteractable('#size', 'top', 1, '2x2', 80, '15px monospace')
         for (let i = 0; i < 100; i++) {
             this.addConnectionPoint('input', 'left', `#color${i}`, `Light Color ${i}`)
         }
@@ -69,6 +71,8 @@ export class Node extends BaseNode {
         this.height = data.height || 5
         this.size[0] = data.sizew || 2
         this.size[1] = data.sizeh || 2
+        this.setInteractableText('#resolution', `${this.width}x${this.height}`)
+        this.setInteractableText('#size', `${this.size[0]}x${this.size[1]}`)
         
         const neededPoints = this.width * this.height
         if (this.connectionPoints.length < neededPoints)
@@ -101,55 +105,59 @@ export class Node extends BaseNode {
         // find distance
         const size = this.getSize()
         const pos = this.getRelativePointer()
-        
-        if (this.isHoveringRectangle(pos, size[0] - 80, -20, 80, 20)) { // SIZE
-            this.cooldown = true
-            this.getUserTextInput(`${this.size[0]}x${this.size[1]}`).then(v => {
-                const split = v.split('x')
-                if (split.length != 2) {
-                    // assume it's just 1 number to set both
-                    var number = parseInt(v)
-                    if (Number.isNaN(this.number))
-                        number = 1
-                    this.size = [number, number]
-                }
-                else {
-                    this.size[0] = parseInt(split[0])
-                    this.size[1] = parseInt(split[1])
-                    if (Number.isNaN(this.size[0]))
-                        this.size[0] = 2
-                    if (Number.isNaN(this.size[1]))
-                        this.size[1] = 2
-                }
-                this.invalidated = true
-            })
-        }
-        else if (this.isHoveringRectangle(pos, 0, -20, 80, 20)) { // WIDTH/HEIGHT
-            this.cooldown = true
-            this.getUserTextInput(`${this.width}x${this.height}`).then(v => {
-                const split = v.split('x')
-                if (split.length != 2) {
-                    // assume it's just 1 number to set both
-                    var number = parseInt(v)
-                    if (Number.isNaN(this.number))
-                        number = 5
-                    this.width = number
-                    this.height = number
-                }
-                else {
-                    this.width = parseInt(split[0])
-                    this.height = parseInt(split[1])
-                    if (Number.isNaN(this.width))
-                        this.width = 5
-                    if (Number.isNaN(this.height))
-                        this.height = 5
-                }
-                const neededPoints = this.width * this.height
-                if (this.connectionPoints.length < neededPoints)
-                    for (let i = this.connectionPoints.length; i < neededPoints; i++)
-                        this.addConnectionPoint('input', 'left', `#color${i}`, `Light Color ${i}`)
-                this.invalidated = true
-            })
+    }
+
+    input(action) {
+        switch (action) {
+            case '#resolution':
+                this.getUserTextInput(`${this.width}x${this.height}`).then(v => {
+                    const split = v.split('x')
+                    if (split.length != 2) {
+                        // assume it's just 1 number to set both
+                        var number = parseInt(v)
+                        if (Number.isNaN(this.number))
+                            number = 5
+                        this.width = number
+                        this.height = number
+                    }
+                    else {
+                        this.width = parseInt(split[0])
+                        this.height = parseInt(split[1])
+                        if (Number.isNaN(this.width))
+                            this.width = 5
+                        if (Number.isNaN(this.height))
+                            this.height = 5
+                    }
+                    const neededPoints = this.width * this.height
+                    if (this.connectionPoints.length < neededPoints)
+                        for (let i = this.connectionPoints.length; i < neededPoints; i++)
+                            this.addConnectionPoint('input', 'left', `#color${i}`, `Light Color ${i}`)
+                    this.invalidate()
+                    this.setInteractableText('#resolution', `${this.width}x${this.height}`)
+                })
+                break
+            case '#size':
+                this.getUserTextInput(`${this.size[0]}x${this.size[1]}`).then(v => {
+                    const split = v.split('x')
+                    if (split.length != 2) {
+                        // assume it's just 1 number to set both
+                        var number = parseInt(v)
+                        if (Number.isNaN(this.number))
+                            number = 2
+                        this.size = [number, number]
+                    }
+                    else {
+                        this.size[0] = parseInt(split[0])
+                        this.size[1] = parseInt(split[1])
+                        if (Number.isNaN(this.size[0]))
+                            this.size[0] = 2
+                        if (Number.isNaN(this.size[1]))
+                            this.size[1] = 2
+                    }
+                    this.invalidate()
+                    this.setInteractableText('#size', `${this.size[0]}x${this.size[1]}`)
+                })
+                break
         }
     }
 
@@ -214,56 +222,6 @@ export class Node extends BaseNode {
         context = context2
 
         const size = this.getSize()
-
-        // draw width/height box
-        context.save()
-
-            context.beginPath() // only clip it to make the transparent version not look weird
-            context.rect(0, -20, size[0], 20)
-            context.clip()
-
-            context.fillStyle = '#fff'
-            context.beginPath()
-            context.roundRect(0, -20, 80, 40, 10)
-            context.fill()
-            
-            context.fillStyle = '#ddd'
-            context.beginPath()
-            context.roundRect(1, -19, 78, 40, 10)
-            context.fill()
-
-            context.fillStyle = '#000'
-            context.textAlign = 'center'
-            context.textBaseline = 'middle'
-            context.font = '15px monospace'
-            context.fillText(`${this.width}x${this.height}`, 40, -10)
-
-        context.restore()
-        
-        // draw size box
-        context.save()
-
-            context.beginPath() // only clip it to make the transparent version not look weird
-            context.rect(0, -20, size[0], 20)
-            context.clip()
-
-            context.fillStyle = '#fff'
-            context.beginPath()
-            context.roundRect(size[0] - 80, -20, 80, 40, 10)
-            context.fill()
-            
-            context.fillStyle = '#ddd'
-            context.beginPath()
-            context.roundRect(size[0] - 79, -19, 78, 40, 10)
-            context.fill()
-
-            context.fillStyle = '#000'
-            context.textAlign = 'center'
-            context.textBaseline = 'middle'
-            context.font = '15px monospace'
-            context.fillText(`${this.size[0]}x${this.size[1]}`, size[0] - 40, -10)
-
-        context.restore()
 
         // draw background
         context.fillStyle = '#000'

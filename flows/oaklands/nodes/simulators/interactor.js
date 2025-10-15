@@ -2,14 +2,6 @@
 
 import { BaseNode } from "../../../node.js"
 
-function lerp(a, b, t) {
-    return a + (b - a) * t
-}
-
-function lerpV3(a, b, t) {
-    return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)]
-}
-
 export class Node extends BaseNode {
     static id         = "interactor"
     static display    = "Interactor"
