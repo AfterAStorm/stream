@@ -1,7 +1,9 @@
 # stream #
 
-A "work in progress" node editor.
+A node editor.
 
-Currently supports the Roblox game Oakland's logic system... to a degree at least.
+Created for the Roblox game Oakland's logic system as a way to template or plan logic systems.
 
-See it in action at https://afterastorm.github.io/stream/web/editor
+See it in action at https://stream.bytestorm.sh/
+
+See the old version at https://afterastorm.github.io/stream/web/editor (on "old" branch)
