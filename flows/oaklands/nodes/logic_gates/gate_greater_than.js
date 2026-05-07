@@ -13,25 +13,33 @@ export class Node extends BaseNode {
         super()
         this.addConnectionPoint('input', 'left', '#left', 'Left Input, the x of x > y')
         this.addConnectionPoint('input', 'left', '#right', 'Right Input, the y of x > y')
-        this.addConnectionPoint('output', 'right', '#result', 'GREATER THAN Result')
+        this.addConnectionPoint('output', 'right', '#result', 'GREATER THAN Result, when x > y\n**Outputs: ⚡ LEFT VALUE')
         this.setConnectionPointValue('#result', 0)
 
         this.cached = true
+        
+        this.value = 0
     }
 
-    update() {
+    _calculate() {
+        const left = this.getConnectionPointValue('#left')
+        this.value = left > this.getConnectionPointValue('#right') ? left : 0
+        return this.value
+    }
+
+    update(updatedValue) {
         super.update()
 
-        const currentOutput = this.getLocalConnectionPointValue('#result')
-        var setOutput = 0
-        const left = this.getConnectionPointValue('#left')
-        const right = this.getConnectionPointValue('#right')
-        if (left > right) {
-            setOutput = left
-        }
-        
-        if (setOutput != currentOutput) {
-            this.setConnectionPointValue('#result', setOutput)
+        switch(updatedValue) {
+            case '#left':
+            case '#right':
+                this.invalidate()
+                this.setConnectionPointValue('#result', this._calculate())
+                break
+            default:
+                if (this.getLocalConnectionPointValue('#result') != this.value)
+                    this.setConnectionPointValue('#result', this.value)
+                break
         }
     }
 

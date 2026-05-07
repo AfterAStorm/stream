@@ -5,7 +5,7 @@ import { BaseNode } from "../../../node.js"
 export class Node extends BaseNode {
     static id         = "randomizer"
     static display    = "Randomizer"
-    static size       = [1.25, .5]
+    static size       = [1, .5]
     static icon       = "$assets/randomizer.png"
     static category   = "processors"
 

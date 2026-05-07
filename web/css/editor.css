@@ -104,6 +104,10 @@ dialog {
     position: relative;
 }
 
+.button:disabled {
+    opacity: 50%;
+}
+
 .tooltip {
     position: absolute;
     top: calc(100% + 10px);
@@ -421,4 +425,8 @@ p {
         overflow-y: scroll;
         overflow-x: hidden;
     }*/
+}
+
+.mono {
+    font-family: monospace;
 }

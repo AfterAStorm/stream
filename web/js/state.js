@@ -1,71 +1,28 @@
 /* web */
 
-class Keybind {
-    constructor(comment, defaultCode) {
-        this.comment = comment
-        this.code = defaultCode ?? 'n/a'
-        this.pressed = false
-        this.pressedWas = false
-        this.releasedWas = false
-    }
+import { KeybindManager, Keybind, SettingManager, BoolSetting, CycleSetting } from "./settings.js"
+import { showInfoModal } from "./modal.js"
 
-    press() {
-        if (!this.pressed)
-            this.pressedWas = true
-        this.pressed = true
-    }
+function addV2(a, b) {
+    return [a[0] + b[0], a[1] + b[1]]
+}
 
-    release() {
-        if (this.pressed)
-            this.releasedWas = true
-        this.pressed = false
-        this.pressedWas = false
-    }
+function subV2(a, b) {
+    return [a[0] - b[0], a[1] - b[1]]
+}
 
-    isPressed() {
-        return this.pressed
-    }
+function mulV2s(a, b) { // s for scalar
+    return [a[0] * b, a[1] * b]
+}
 
-    wasPressed() {
-        if (this.pressedWas) {
-            this.pressedWas = false
-            return true
-        }
-        return false
-    }
+function distV2(a) {
+    return Math.sqrt(Math.pow(a[0], 2) + Math.pow(a[1], 2))
+}
 
-    wasReleased() {
-        if (this.releasedWas) {
-            this.releasedWas = false
-            return true
-        }
-        return false
-    }
-
-    getKey() {
-        if (this.isMouse()) {
-            switch(this.code) {
-                case 1:
-                    return 'LMB'
-                case 2:
-                    return 'RMB'
-                case 4:
-                    return 'MMB'
-            }
-            return this.code
-        }
-        return this.code.toUpperCase().replace("KEY", "").replace("DIGIT", "").replace("NUMPAD", "NUMPAD ")
-            .replace("SHIFTLEFT", "SHIFT").replace("CONTROLLEFT", "CONTROL")
-            .replace("SHIFTRIGHT", "SHIFT").replace("SHIFTRIGHT", "SHIFT")
-    }
-
-    isMouse() {
-        return typeof(this.code) === "number"
-    }
-
-    toJSON() {
-        return this.code
-    }
+function absV2(a) { // ref
+    a[0] = Math.abs(a[0])
+    a[1] = Math.abs(a[1])
+    return a
 }
 
 export class EditorState {
@@ -88,7 +45,7 @@ export class EditorState {
         this.hoveredConnectionColor = null
         this.connectionColor = null
 
-        this.keybinds = {
+        this.keybinds = new KeybindManager({
             'select':       new Keybind('interact, select, and create connections with nodes', 1),
             'pan':          new Keybind('pan the camera', 2),
 
@@ -97,11 +54,20 @@ export class EditorState {
             'rotate':       new Keybind('rotate nodes', 'keyr'),
             'clone':        new Keybind('clone nodes and/or connections', 'keye'),
 
-            'persist':      new Keybind('keep placing connections', 'shiftleft'),
-            'snap':         new Keybind('snap nodes to the grid (doesn\'t support connections yet)', 'shiftleft'),
+            'persist':      new Keybind('keep selecting nodes or placing connections', 'shiftleft'),
+            'snap':         new Keybind('snap nodes & connections to the grid', 'shiftleft'),
 
             'lasso':        new Keybind('select multiple nodes all at once', 'controlleft')
-        }
+        })
+        this.settings = new SettingManager({
+            'grid snapped connections': new BoolSetting('should snap connections to "grid"', true),
+            'point snapped connections': new BoolSetting('should snap to connection points on nodes on axises', true),
+            'subpoint snapped connections': new BoolSetting('should snap to "intermediate" points on connections', true),
+            'segment snapped connections': new BoolSetting('should snap to lines on connections', true),
+            'local snapped connections': new BoolSetting('should snap connections relative to last point', true),
+            'grid snapped nodes': new BoolSetting('should snap nodes to "grid"', true),
+            'grid increment': new CycleSetting('cycle grid size increments', [['1 / 4', 1/4], ['1 / 2', 1/2], ['1', 1]])
+        })
 
         this.inputType = 'mouse'
         this.lastPinchDistance = null
@@ -122,6 +88,7 @@ export class EditorState {
         this.hoveredNode = null
         this.hoveredPoint = null
         this.hoveredConnection = null
+        this.snappingLines = [] // what we are snapping to, [[axisx, axiy], [x, y]]
 
         this.creatingNode = null
         this.creatingConnection = null
@@ -158,32 +125,6 @@ export class EditorState {
         return ['all', 'interact'].includes(this.mode.value)
     }
 
-    updateKeybinds() {
-        Object.keys(this.keybinds).forEach(key => {
-            const elements = document.querySelectorAll(`#keybind-${key}`)
-            elements.forEach(e => e.innerText = this.keybinds[key].getKey())
-        })
-    }
-
-    saveKeybinds() {
-        if (localStorage != null)
-            localStorage.setItem('keybinds', JSON.stringify(this.keybinds))
-        this.updateKeybinds()
-    }
-
-    loadKeybinds() {
-        if (localStorage != null) {
-            const keybinds = localStorage.getItem('keybinds')
-            if (keybinds != null) {
-                Object.entries(JSON.parse(keybinds)).forEach(kb => {
-                    if (this.keybinds[kb[0]])
-                        this.keybinds[kb[0]].code = kb[1]
-                })
-            }
-        }
-        this.updateKeybinds()
-    }
-
     isKeyHeld(key) {
         return this.heldKeys.includes(key)
     }
@@ -193,11 +134,11 @@ export class EditorState {
     }
 
     isKeybindHeld(name) {
-        return this.keybinds[name].isPressed()
+        return this.keybinds.get(name).isPressed()
     }
 
     wasKeybindPressed(name) {
-        return this.keybinds[name].wasPressed()
+        return this.keybinds.get(name).wasPressed()
     }
 
     addHistory(event, objects) {
@@ -265,41 +206,62 @@ export class EditorState {
             this.positionDelta[0] = -speed * delta * dir[0] * (this.scale)
             this.positionDelta[1] = -speed * delta * dir[1] * (this.scale)
             this.handleDrag()
+            this.handleMove() // pretend the mouse moved for everything that requires that
         }
     }
 
     handleDrag() {
         if (this.creatingNode != null) {
             const size = this.creatingNode.getSize()
-            this.creatingNode.position = [
-                this.position[0] * (1 / this.scale) - this.pan[0] - size[0] / 2,
-                this.position[1] * (1 / this.scale) - this.pan[1] - size[1] / 2,
-            ]
+            this.creatingNode.position = subV2(this.screenToFlow(this.position), mulV2s(size, .5))
+            this.selectNodes([this.creatingNode]) // force an update in the _drag_offset department
             this.creatingNode = null
         }
         else {
+            const flowPos = this.screenToFlow(this.position)
             if (!this.isDragging) {
                 this.isDragging = true
                 this.addHistory('move', {
                     nodes: this.selectedNodes.map(node => [node, [...node.position]]),
                     connections: this.editor.flow.connections
                         .filter(connection => connection.points.every(point => this.selectedNodes.includes(point.node)))
-                        .map(connection => [connection, connection.visualPoints.map(point => [...point])]),
-                    subpoints: this.selectedSubPoints.map(subpoint => [subpoint[0], subpoint[1], [...subpoint[0].visualPoints[subpoint[1]]]])
+                        .map(connection => [connection, connection.points.map(point => [...point.position])]),
+                    //subpoints: this.selectedSubPoints.map(subpoint => [subpoint[0], subpoint[1], [...subpoint[0].visualPoints[subpoint[1]]]])
                 })
             }
             this.selectedSubPoints.forEach(subpoint => {
-                subpoint[0].visualPoints[subpoint[1]][0] += this.positionDelta[0] * (1 / this.scale)
-                subpoint[0].visualPoints[subpoint[1]][1] += this.positionDelta[1] * (1 / this.scale)
+                subpoint[0].points[subpoint[1]].position = this.getSnapFor(this.screenToFlow(...this.position), null, true)
+            })
+            const isGridSnapping = this.isKeybindHeld('snap') && this.settings.getValue('grid snapped nodes')
+            this.selectedNodes.forEach(node => {
+                //node.position[0] += this.positionDelta[0] * (1 / this.scale)
+                //node.position[1] += this.positionDelta[1] * (1 / this.scale)
+                node.position = addV2(flowPos, node._drag_offset)
+
+                if (isGridSnapping) {
+                    const increment = this.settings.getValue('grid increment')
+                    node.position[0] = Math.round(node.position[0] / (this.gridSize * increment)) * (this.gridSize * increment)
+                    node.position[1] = Math.round(node.position[1] / (this.gridSize * increment)) * (this.gridSize * increment)
+                }
             })
             this.editor.flow.connections.forEach(connection => {
-                if (connection.points.every(point => this.selectedNodes.includes(point.node))) {
-                    connection.visualPoints.forEach(subpoint => {
+                if (connection.points.every(point => point.node != null ? this.selectedNodes.includes(point.node) : true)) {
+                    /*connection.visualPoints.forEach(subpoint => {
                         subpoint[0] += this.positionDelta[0] * (1 / this.scale)
                         subpoint[1] += this.positionDelta[1] * (1 / this.scale)
+                    })*/
+                    connection.points.forEach(point => {
+                        if (point.node)
+                            return // ignore node points
+                        point.position = addV2(point._relative_to.position, point._drag_offset)
+                        /*if (isGridSnapping) {
+                            const increment = this.settings.getValue('grid increment')
+                            point.position[0] = Math.round(point.position[0] / (this.gridSize * increment)) * (this.gridSize * increment)
+                            point.position[1] = Math.round(point.position[1] / (this.gridSize * increment)) * (this.gridSize * increment)
+                        }*/
                     })
                 }
-                else if (connection.visualPoints.length > 0 && connection.points.some(point => this.selectedNodes.includes(point.node))) {
+                /*else if (connection.visualPoints.length > 0 && connection.points.some(point => this.selectedNodes.includes(point.node))) {
                     if (this.selectedNodes.includes(connection.points[0].node)) {
                         connection.visualPoints[0][0] += this.positionDelta[0] * (1 / this.scale) 
                         connection.visualPoints[0][1] += this.positionDelta[1] * (1 / this.scale) 
@@ -308,38 +270,223 @@ export class EditorState {
                         connection.visualPoints[connection.visualPoints.length - 1][0] += this.positionDelta[0] * (1 / this.scale) 
                         connection.visualPoints[connection.visualPoints.length - 1][1] += this.positionDelta[1] * (1 / this.scale) 
                     }
-                }
-            })
-            this.selectedNodes.forEach(node => {
-                node.position[0] += this.positionDelta[0] * (1 / this.scale)
-                node.position[1] += this.positionDelta[1] * (1 / this.scale)
-
-                if (this.isKeybindHeld('snap')) {
-                    node.position[0] = Math.round(node.position[0] / this.gridSize) * this.gridSize
-                    node.position[1] = Math.round(node.position[1] / this.gridSize) * this.gridSize
-                }
+                }*/
             })
         }
     }
 
     selectNodes(nodes) {
         if (this.selectedNodes != null)
-            this.selectedNodes.forEach(node => node.ghost = false)
+            this.selectedNodes.forEach(node => {
+                node._drag_offset = null
+                node.ghost = false
+            })
+        const flowPos = this.screenToFlow(this.position)
         this.selectedNodes = nodes
         if (this.selectedNodes != null)
-            this.selectedNodes.forEach(node => node.ghost = true)
+            this.selectedNodes.forEach(node => {
+                node._drag_offset = subV2(node.position, flowPos)
+                node.ghost = true
+            })
+        this.editor.flow.connections.forEach(con => {
+            if (con.points.some(p => this.selectedNodes.includes(p.node))) {
+                con.points.forEach((p, i) => {
+                    if (p.node)
+                        return // node points get assigned a position differently, and are relative to the node already
+                    let closestNode = con.searchForNodePoint(i)
+                    if (closestNode == null) { // this should never happen in a correctly layed out connection
+                        closestNode = 0
+                    }
+                    p._relative_to = con.getPoint(closestNode).node
+                    p._drag_offset = subV2(p.position, /*flowPos*/p._relative_to.position)
+                })
+            }
+        })
+    }
+
+    deselectAll() {
+        this.selectNodes([])
+        if (this.creatingConnection != null) {
+            this.creatingConnection.fakeEdge = null
+            this.creatingConnection.cleanupPoints()
+            this.creatingConnection = null
+        }
+        this.snappingLines = []
+        this.selectedConnections = []
+        this.selectedPoints = []
+        this.selectedSubPoints = []
+        this.hoveredConnection = null
+        this.hoveredNode = null
+        this.hoveredPoint = null
+        this.hoveredSubPoint = null
     }
 
     handleSelect() {
         const nodes = this.editor.flow.getNodesAt(...this.position)
         const points = this.editor.flow.getConnectionPointsAt(...this.position)
-        const connections = this.editor.flow.getConnectionsAt(...this.position).filter(connection => connection != this.creatingConnection)
+        const connections = this.editor.flow.getConnectionsAt(...this.position)//.filter(connection => connection != this.creatingConnection)
         // priority:
         // connection point
         // node
-        // conncetion
+        // connection
 
-        if (this.creatingNode != null && this.inputType == 'touch') {
+        if (this.isKeybindHeld('lasso')) { // multi-drag/select
+            this.selectionStart = [...this.position]
+            this.primaryPressed = false
+        }
+        else if (points.length > 0 && this.selectedNodes.length == 0 && this.canConnect()) {
+            if (this.creatingConnection == null) {
+                this.deselectAll()
+                this.selectedPoints = [points[0]]
+                this.creatingConnection = new (this.editor.flow.getConnectionFor(points[0]))(points[0], null)
+                this.creatingConnection.color = this.connectionColor
+                this.creatingConnectionPointIndex = 0
+                this.editor.flow.connections.push(this.creatingConnection)
+                points[0].node.invalidatePoint(points[0].id)
+            }
+            else {
+                this.creatingConnection.addEdge(this.creatingConnectionPointIndex, this.creatingConnection.addPoint(points[0]))
+                this.creatingConnection.invalidatePoints()
+
+                if (!this.isKeybindHeld('persist')) {
+                    this.deselectAll()
+                }
+            }
+        }
+        else if (connections.length > 0) {
+            if (!this.canConnect())
+                return
+            // indexes!
+            const connection = connections[0]
+            const subpoint = connection.getHoveringSubPoint(...this.position)
+            const segment = connection.getHoveringSegment(...this.position)
+            if (this.creatingConnection == null) { // start new connection
+                if (subpoint != null) {
+                    // from existing point
+                    if (this.isKeyHeld('Alt')) {
+                        // new connection from
+                        this.deselectAll()
+                        this.creatingConnection = connection
+                        this.creatingConnectionPointIndex = subpoint
+                    }
+                    else {
+                        // drag
+                        // we have to tell the getSnapFor that we are using this connection so it doesn't snap to itself
+                        this.creatingConnection = connection
+                        this.creatingConnectionPointIndex = null
+                        this.selectedSubPoints = [[connection, subpoint]]
+                    }
+                }
+                else if (segment != null) {
+                    // split at point
+                    this.deselectAll()
+                    // project onto line
+                    const edge = connection.getEdge(segment)
+                    const a = connection.getPointPosition(edge[0])
+                    const b = connection.getPointPosition(edge[1])
+                    const pos = this.projectOntoLine(a, b, this.getSnapFor(this.screenToFlow(this.position), null, false))
+
+                    connection.deleteEdge(segment)
+                    const pointIndex = connection.addPoint(...pos)
+                    connection.addEdge(edge[0], pointIndex)
+                    connection.addEdge(pointIndex, edge[1])
+                    this.creatingConnection = connection
+                    this.creatingConnectionPointIndex = null
+                    this.selectedSubPoints = [[connection, pointIndex]]
+                }
+            }
+            else if (this.creatingConnectionPointIndex != null) { // merge connection
+                // try to merge
+                const merging = connections[0]
+                if (subpoint != null) {
+                    if (merging == this.creatingConnection) {
+                        if (this.creatingConnection.getPointEdges(this.creatingConnectionPointIndex).flat().includes(subpoint))
+                            return // cannot connect to subpoint we are right next to!
+                    }
+                    // merge to subpoint
+                    console.warn('MERGE TO SUBPOINT!')
+                    if (merging == this.creatingConnection) {
+                        // connect to same connection
+                        this.creatingConnection.addEdge(this.creatingConnectionPointIndex, subpoint)
+                    }
+                    else {
+                        // connect & merge
+                        const mergeMap = {}
+                        this.creatingConnection.invalidatePoints() // when merge, tell points to update!
+                        this.creatingConnection.points.forEach((p, idx) => {
+                            mergeMap[idx] = merging.addPoint(p)
+                        })
+                        this.creatingConnection.edges.forEach(e => merging.edges.push([mergeMap[e[0]], mergeMap[e[1]]]))
+                        this.creatingConnectionPointIndex = mergeMap[this.creatingConnectionPointIndex]
+                        merging.addEdge(this.creatingConnectionPointIndex, subpoint)
+                        this.flow.cutConnection(this.creatingConnection)
+
+                    }
+                    this.deselectAll()
+                }
+                else if (segment != null) { // we don't care about neighbor segments, since it will just split it anyway
+                    console.warn('MERGE TO SEGMENT!')
+                    const pos = this.getSnapFor(this.screenToFlow(this.position), this.creatingConnection.getPointPosition(this.creatingConnectionPointIndex))
+                    const edge = merging.getEdge(segment)
+                    const pointIndex = merging.addPoint(...pos)
+                    merging.deleteEdge(segment)
+                    merging.addEdge(edge[0], pointIndex)
+                    merging.addEdge(pointIndex, edge[1])
+                    if (merging == this.creatingConnection) {
+                        //console.log('merge to self')
+                        // connect to same connection
+                        // conveniently it already kinda does it :D
+                    }
+                    else {
+                        const mergeMap = {}
+                        this.creatingConnection.invalidatePoints() // when merge, tell points to update!
+                        this.creatingConnection.points.forEach((p, idx) => {
+                            mergeMap[idx] = merging.addPoint(p)
+                        })
+                        this.creatingConnection.edges.forEach(e => merging.edges.push([mergeMap[e[0]], mergeMap[e[1]]]))
+                        this.creatingConnectionPointIndex = mergeMap[this.creatingConnectionPointIndex]
+                        this.flow.cutConnection(this.creatingConnection)
+                    }
+                    merging.addEdge(this.creatingConnectionPointIndex, pointIndex)
+                    this.deselectAll()
+                }
+            }
+        }
+        else if (this.creatingConnection != null && this.creatingConnectionPointIndex != null) {
+            if (!this.canConnect())
+                return
+            // add intermediate point
+            const pos = this.getSnapFor(this.screenToFlow(this.position), this.creatingConnection.getPointPosition(this.creatingConnectionPointIndex))
+            this.creatingConnection.addPoint(...pos)
+            this.creatingConnection.addEdge(this.creatingConnectionPointIndex, this.creatingConnection.points.length - 1)
+            console.log(this.creatingConnection)
+            this.creatingConnectionPointIndex = this.creatingConnection.points.length - 1
+        }
+        else if (nodes.length > 0 && this.canSelect()) {
+            if (!this.canSelect())
+                return
+            const multiSelectEnabled = this.inputType == 'touch' || this.isKeyHeld('Shift')
+
+            if (!multiSelectEnabled) {
+                if (this.selectedNodes.length > 1)
+                    return this.selectNodes(this.selectedNodes) // ignore, drag multiselected and update offsets
+                const firstNode = nodes[nodes.length - 1]
+                this.selectNodes([firstNode])
+            }
+            else {
+                const unselected = nodes.filter(n => !this.selectedNodes.includes(n))
+                if (unselected.length > 0)
+                    this.selectNodes([...this.selectedNodes, unselected[unselected.length - 1]])
+                else {
+                    this.selectNodes(this.selectedNodes.filter(n => n != nodes[nodes.length - 1])) // remove node
+                }
+            }
+        }
+        else {
+            this.selectNodes([])
+        }
+
+        /*if (this.creatingNode != null && this.inputType == 'touch') {
             // special behavior for mobile
             this.selectNodes([this.creatingNode])
             this.handleDrag()
@@ -478,7 +625,7 @@ export class EditorState {
         }
         else {
             this.selectNodes([])
-        }
+        }*/
     }
 
     handleDelete() {
@@ -487,34 +634,62 @@ export class EditorState {
         const connections = this.editor.flow.getConnectionsAt(...this.position)
 
         if (this.creatingConnection != null) {
-            if (this.creatingConnection.visualPoints.length > 0) {
-                this.creatingConnection.visualPoints.splice(this.creatingConnection.visualPoints.length - 1, 1)
-            }
-            else {
-                this.editor.flow.cutConnection(this.creatingConnection)
-                this.creatingConnection = null
-                this.selectedNodes = []
-                this.selectedConnections = []
-                this.selectedPoints = []
-            }
+            this.deselectAll()
         }
         else if (this.selectedNodes.length > 0) {
+            if (!this.canSelect())
+                return
             if (this.selectedNodes.some(node => nodes.includes(node))) {
                 // hovering over a selected node --> delete
                 const connections = this.selectedNodes
                     .flatMap(node => this.editor.flow.getConnectionsTo(node))
                     .filter((node, index, array) => array.indexOf(node) == index)
+                // try to dissolve edges first
+                this.selectedNodes.forEach(node => {
+                    this.editor.flow.getConnectionsTo(node).forEach(con => {
+                        const points = new Array(...con.points.entries().filter(p => p[1].node == node))
+                        points.reverse().forEach(pi => {
+                            con.getPointEdgeIndexes(pi[0]).reverse().forEach(e => con.dissolveEdge(e))
+                        })
+                        if (!con.isValid())
+                            this.editor.flow.cutConnection(con)
+                        else
+                            con.cleanupPoints()
+                    })
+                })
+
                 this.selectedNodes.forEach(node => this.editor.flow.removeNode(node))
                 this.addHistory('delete', {nodes: this.selectedNodes, connections: connections, subpoints: []})
                 this.selectNodes([])
             }
         }
         else if (connections.length > 0) {
+            if (!this.canConnect())
+                return
             const removedSubpoints = []
             const removedConnections = []
             connections.filter(c => c != this.creatingConnection).forEach(connection => {
                 const subpoint = connection.getHoveringSubPoint(...this.position)
+                const segment = connection.getHoveringSegment(...this.position)
+
                 if (subpoint != null) {
+                    // TODO: needs to check "graph connectivity"-- when point is removed, check if it splits or not
+                    // if it doesn't split, it can be safely dissolved!
+                    if (!connection.dissolvePoint(subpoint) || !connection.isValid()) {
+                        this.editor.flow.cutConnection(connection)
+                    }
+                    connection.cleanupPoints()
+                }
+                else if (segment != null) {
+                    // if a segment has 1 node point, we can just delete it and it's assosciated edges
+                    // if we can't dissolve it (invalid disconnect edge), just delete it all anyway!
+                    if (!connection.dissolveEdge(segment) || !connection.isValid()) {
+                        this.editor.flow.cutConnection(connection)
+                    }
+                    connection.cleanupPoints()
+                }
+                this.deselectAll()
+                /*if (subpoint != null) {
                     const deleted = connection.visualPoints.splice(subpoint, 1)[0]
                     removedSubpoints.push([connection, subpoint, deleted]) // conn, index, pos
                 }
@@ -524,7 +699,7 @@ export class EditorState {
                     })
                     this.editor.flow.cutConnection(connection)
                     removedConnections.push(connection)
-                }
+                }*/
             })
             this.addHistory('delete', {
                 nodes: [],
@@ -579,7 +754,11 @@ export class EditorState {
         const points = this.editor.flow.getConnectionPointsAt(...this.position)
         const connections = this.editor.flow.getConnectionsAt(...this.position)
 
+        const OFFSET = [25, 25]
+
         if (this.selectedNodes.length > 0) { // clone nodes
+            if (!this.canSelect())
+                return
             const duplicates = []
 
             for (var node of this.selectedNodes) {
@@ -587,8 +766,7 @@ export class EditorState {
                 dupe.flow = this.editor.main_flow
                 dupe.subflow = this.editor.flow
                 dupe.deserialize(JSON.parse(JSON.stringify(node.serialize())))
-                dupe.position[0] += 25
-                dupe.position[1] += 25
+                dupe.position = addV2(dupe.position, OFFSET)
                 dupe.needsConnectionUpdate = true // fix bug attempt
                 this.editor.flow.nodes.push(dupe)
                 duplicates.push([dupe, node])
@@ -597,8 +775,28 @@ export class EditorState {
             const connections = this.selectedNodes
                 .flatMap(node => this.editor.flow.getConnectionsTo(node))
                 .filter((node, index, array) => array.indexOf(node) == index)
+            console.log(connections)
             connections.forEach(connection => {
-                const nodeA = duplicates.find(nodes => (nodes[1] == connection.points[0].node)) ?? [connection.points[0].node]
+                const duplicate = new this.editor.flow.connectionDefinitions[connection.id]()
+
+                duplicate.edges = connection.edges.map(e => [e[0], e[1]]) // make new refs
+                
+                duplicate.points = connection.points.map((p, i) => {
+                    if (p.node != null) {
+                        // node ref
+                        return duplicates.find(nodes => (nodes[1] == p.node))?.[0].getConnectionPoint(p.id) ?? p.node.getConnectionPoint(p.id)
+                    }
+                    else {
+                        // vp ref
+                        return {
+                            'position': addV2(p.position, OFFSET)
+                        }
+                    }
+                })
+                duplicate.color = connection.color
+                this.editor.flow.connections.push(duplicate)
+
+                /*const nodeA = duplicates.find(nodes => (nodes[1] == connection.points[0].node)) ?? [connection.points[0].node]
                 const nodeB = duplicates.find(nodes => (nodes[1] == connection.points[1].node)) ?? [connection.points[1].node]
                 const dupec = new this.editor.flow.connectionDefinitions[connection.id](
                     nodeA[0].getConnectionPoint(connection.points[0].id),
@@ -608,22 +806,35 @@ export class EditorState {
                 for (let i = 0; i < connection.visualPoints.length; i++) {
                     dupec.addPoint(connection.visualPoints[i][0] + 25, connection.visualPoints[i][1] + 25)
                 }
-                this.editor.flow.connections.push(dupec)
+                this.editor.flow.connections.push(dupec)*/
             })
             this.selectNodes(duplicates.map(d => d[0]))
         }
         else if (connections.length > 0 && this.creatingConnection == null) {
+            if (!this.canConnect())
+                return
             const connection = connections[0]
             const subpoint = connection.getHoveringSubPoint(...this.position)
+            const segment = connection.getHoveringSegment(...this.position)
             if (subpoint != null) {
-                this.selectedPoints = [connection.a]
-                this.creatingConnection = new connection.constructor(connection.a, null)
-                this.creatingConnection.color = connection.color
-                for (let i = 0; i < subpoint + 1; i++) {
-                    this.creatingConnection.addPoint(...connection.visualPoints[i])
-                }
-                //connection.visualPoints.forEach(point => this.creatingConnection.visualPoints.push(point))
-                this.editor.flow.connections.push(this.creatingConnection)
+                this.deselectAll()
+                this.creatingConnection = connection
+                this.creatingConnectionPointIndex = subpoint
+            }
+            else if (segment != null) {
+                this.deselectAll()
+                // project onto line
+                const edge = connection.getEdge(segment)
+                const a = connection.getPointPosition(edge[0])
+                const b = connection.getPointPosition(edge[1])
+                const pos = this.projectOntoLine(a, b, this.getSnapFor(this.screenToFlow(this.position), null, false))
+
+                connection.deleteEdge(segment)
+                const pointIndex = connection.addPoint(...pos)
+                connection.addEdge(edge[0], pointIndex)
+                connection.addEdge(pointIndex, edge[1])
+                this.creatingConnection = connection
+                this.creatingConnectionPointIndex = pointIndex
             }
             /*this.addHistory('', {
                 
@@ -634,29 +845,203 @@ export class EditorState {
     handleHover() {
         const nodes = this.editor.flow.getNodesAt(...this.position)
         const points = this.editor.flow.getConnectionPointsAt(...this.position)
-        const connections = this.editor.flow.getConnectionsAt(...this.position).filter(c => c != this.creatingConnection)
+        const connections = this.editor.flow.getConnectionsAt(...this.position)//.filter(c => c != this.creatingConnection)
 
         this.hoveredNode = nodes[0]
         this.hoveredPoint = points[0]
         this.hoveredConnection = connections[0]
-    }
-
-    handleCreating() {
-        if (this.creatingConnection != null) {
-            if (this.hoveredPoint != null && this.editor.flow.canConnectTo(this.creatingConnection.a, this.hoveredPoint))
-                this.creatingConnection.b = this.hoveredPoint
-            else
-                this.creatingConnection.b = {
-                    'position': [this.position[0] * (1 / this.scale), this.position[1] * (1 / this.scale)],
-                    'node': {
-                        'position': [-this.pan[0], -this.pan[1]],
-                        'ghost': true
-                    }
-                }
+        this.hoveredSubPoint = this.hoveredConnection?.getHoveringSubPoint(...this.position)
+        if (this.creatingConnection && this.hoveredSubPoint == this.creatingConnectionPointIndex) {
+            this.hoveredConnection = null // prevent snapping/connecting inf to yourself
         }
     }
 
+    projectOntoLine(a, b, pos) { // project point pos onto a->b
+        const dir = subV2(b, a)
+        // well this is fun
+        let dist = Math.pow(dir[0], 2) + Math.pow(dir[1], 2)
+        if (dist === 0)
+            dist = 1
+        const t = ((pos[0] - a[0]) * (dir[0]) + (pos[1] - a[1]) * (dir[1])) / dist
+        return [a[0] + t * dir[0], a[1] + t * dir[1]]
+    }
+
+    getSnapFor(pos, lastPos, pushSnappingLines) {
+        let snaps = [] // [snap axis, target point, dif (sorting), source point]
+        const snapSubpoints = this.settings.getValue('subpoint snapped connections')
+        const snapSegments = this.settings.getValue('segment snapped connections')
+        const snapPoints = this.settings.getValue('point snapped connections')
+        const snapLocal = this.settings.getValue('local snapped connections')
+        const isSnapping = this.isKeybindHeld('snap')
+        if (isSnapping) {
+            if (snapPoints) {
+                this.editor.flow.nodes.forEach(node => {
+                    node.connectionPoints.forEach(cp => {
+                        const cp_pos = addV2(node.position, cp.position)
+                        const dif = absV2(subV2(cp_pos, pos))
+                        if (dif[0] < 10 || dif[1] < 10) {
+                            // this.selectedPoints.push(cp)
+                            if (dif[0] < dif[1]) {
+                                snaps.push([[1, 0], cp_pos, dif, cp_pos])
+                            }
+                            else {
+                                snaps.push([[0, 1], cp_pos, dif, cp_pos])
+                            }
+                        }
+                    })
+                })
+            }
+            if (snapSubpoints || snapSegments) {
+                this.editor.flow.connections.forEach(con => {
+                    if (snapSubpoints)
+                        con.points.forEach((p, i) => {
+                            if (p.node)
+                                return // ignore nodes, we already do those above! (and they shouldn't require a connection to pre-exist)
+                            if (con == this.creatingConnection && (this.creatingConnectionPointIndex == null || con == this.creatingConnectionPointIndex))
+                                return // ignore self since we check that later! (local snapped connections)
+                            const cp_pos = con.getPointPosition(i)
+                            const dif = absV2(subV2(cp_pos, pos))
+                            if (dif[0] < 5 || dif[1] < 5) {
+                                // this.selectedPoints.push(cp)
+                                if (dif[0] < dif[1]) {
+                                    snaps.push([[1, 0], cp_pos, dif, cp_pos])
+                                }
+                                else {
+                                    snaps.push([[0, 1], cp_pos, dif, cp_pos])
+                                }
+                            }
+                        })
+                    if (snapSegments) {
+                        const segment = con.getHoveringSegment(...this.flowToScreen(...pos))
+                        if (segment != null && this.creatingConnection != null && this.creatingConnectionPointIndex != null) {
+                            const edge = con.getEdge(segment) // [index, index]
+                            if (con == this.creatingConnection && edge.includes(this.creatingConnectionPointIndex))
+                                return // ignore segment if the point is already on it-- it would be parallel uselessness
+
+                            const a = con.getPointPosition(edge[0]) // [x, y]
+                            const b = con.getPointPosition(edge[1])
+                            const p = this.projectOntoLine(a, b, pos)
+                            snaps.push([[1, 1], p, [0, 0], a]) // axis is [1, 1] because it influences both x and y
+                        }
+                    }
+                })
+            }
+        }
+        if (snapPoints && isSnapping) {
+            // this.selectedPoints = [] // this visualization is very fun to mess with
+            
+            snaps.sort((a, b) => (a[0][0]) * (a[2][0] - b[2][0]) + (a[0][1]) * (a[2][1] - b[2][1]) )//distV2(subV2(a[1], pos)) - distV2(subV2(b[1], pos)))
+        }
+
+        const snapped_pos = [pos[0], pos[1]]
+        const DIST = Math.PI / 32 // Math.PI / 36 // 5 deg
+
+        if (lastPos != null && snapLocal && isSnapping) {
+            // snap from last pos
+            const sub = subV2(snapped_pos, lastPos)
+            let angleOffset = Math.atan2(sub[1], sub[0])
+            if (angleOffset < 0)
+                angleOffset += Math.PI * 2
+            //console.clear()
+            const ang = Math.abs(angleOffset % (Math.PI / 2))
+            if (Math.PI / 2 - DIST < ang || ang < DIST) {
+                const dif = absV2(subV2(snapped_pos, lastPos))
+                if (dif[0] < dif[1]) {
+                    snaps.push([[1, 0], lastPos, dif, lastPos])
+                }
+                else {
+                    snaps.push([[0, 1], lastPos, dif, lastPos])
+                }
+            }
+        }
+
+        // sort snaps
+        if (snaps.length > 0) {
+            const axis = [0, 0]
+            snaps = snaps.filter(snap => {
+                // check if axis has been added yet
+                if (snap[0].some((v, i) => v > 0 && axis[i] > 0))
+                    return false
+                snap[0].forEach((v, i) => axis[i] = v > 0 ? v : axis[i])
+                return true
+            })
+        }
+        
+        // snap to grid
+        if (this.settings.getValue('grid snapped connections') && isSnapping) {
+            const increment = this.settings.getValue('grid increment')
+            snapped_pos[0] = Math.round(snapped_pos[0] / (this.gridSize * increment)) * (this.gridSize * increment)
+            snapped_pos[1] = Math.round(snapped_pos[1] / (this.gridSize * increment)) * (this.gridSize * increment)
+        }
+
+        // snap to point
+        if (pushSnappingLines)
+            this.snappingLines = []
+        if (snaps.length > 0) { // assignment already checks keybind & setting!
+            snaps.forEach(snap => {
+                snapped_pos[0] = /*snap[1][0]*/snapped_pos[0] * (1 - Math.floor(snap[0][0])) + Math.ceil(snap[0][0]) * snap[1][0]
+                snapped_pos[1] = /*snap[1][1]*/snapped_pos[1] * (1 - Math.floor(snap[0][1])) + Math.ceil(snap[0][1]) * snap[1][1]
+                if (pushSnappingLines)
+                    this.snappingLines.push([snap[3], snapped_pos]) // from, to
+            })
+        }
+        return snapped_pos
+    }
+
+    handleCreating() {
+        if (this.creatingConnection == null || this.creatingConnectionPointIndex == null)
+            return
+        const current = this.screenToFlow(...this.position)
+        const snapped = this.getSnapFor(
+            current,
+            this.creatingConnection.getPointPosition(this.creatingConnectionPointIndex),
+            true
+        )
+
+        if (this.hoveredPoint != null /* && this.editor.flow.canConnectTo(this.creatingConnection.a, this.hoveredPoint)*/)
+            this.creatingConnection.fakeEdge = [this.creatingConnectionPointIndex, this.hoveredPoint]//this.creatingConnection.b = this.hoveredPoint
+        else if (this.hoveredSubPoint != null && this.hoveredConnection) { // TODO: check canConnectTo
+            this.creatingConnection.fakeEdge = [this.creatingConnectionPointIndex, {
+                'position': [
+                    this.hoveredConnection.points[this.hoveredSubPoint].position[0],//this.position[0] * (1 / this.scale) - this.pan[0],
+                    this.hoveredConnection.points[this.hoveredSubPoint].position[1]//this.position[1] * (1 / this.scale) - this.pan[1]
+                ]
+            }]
+        }
+        else {
+            this.creatingConnection.fakeEdge = [this.creatingConnectionPointIndex, {
+                'position': snapped
+            }]
+        }
+    }
+
+    screenToFlow(x, y) {
+        if (y == null) {
+            y = x[1]
+            x = x[0]
+        }
+        return [
+            x * (1 / this.scale) - this.pan[0],
+            y * (1 / this.scale) - this.pan[1],
+        ]
+    }
+
+    flowToScreen(x, y) {
+        if (y == null) {
+            y = x[1]
+            x = x[0]
+        }
+        return [
+            (x + this.pan[0]) * this.scale,
+            (y + this.pan[1]) * this.scale,
+        ]
+    }
+
     handleLasso() {
+        if (!this.canSelect()) {
+            this.selectionStart = null
+            return
+        }
         const minX = Math.min(this.selectionStart[0], this.position[0]) * (1 / this.scale)
         const maxX = Math.max(this.selectionStart[0], this.position[0]) * (1 / this.scale)
         const minY = Math.min(this.selectionStart[1], this.position[1]) * (1 / this.scale)
@@ -724,6 +1109,7 @@ export class EditorState {
             this.editor.flow.removeNode(this.creatingNode)
             this.creatingNode = null
         }
+        this.handleCreating()
     }
 
     /**
@@ -736,7 +1122,7 @@ export class EditorState {
         this.primaryPressed = (event.buttons & 1) != 0
         this.secondaryPressed = (event.buttons & 2) != 0
 
-        Object.values(this.keybinds).forEach(kb => {if (kb.isMouse() && (event.buttons & kb.code) != 0) kb.press()})
+        this.keybinds.onPointerDown(event)
         this.updateCursor()
         this.updateInputs()
     }
@@ -745,8 +1131,29 @@ export class EditorState {
      * @param {PointerEvent} event 
      */
     onGlobalPointerDown = (event) => {
-        Object.values(this.keybinds).forEach(kb => {if (kb.isMouse() && (event.buttons & kb.code) != 0) kb.press()})
+        this.keybinds.onPointerDown(event)
         this.updateCursor()
+    }
+
+    handleMove() {
+        this.handleHover()
+        if (this.isKeybindHeld('pan') || (this.selectedNodes.length == 0 && this.inputType == 'touch')) {
+            this.handlePan()
+        }
+        if (this.isKeybindHeld('move') && this.selectionStart == null) {
+            this.handleDrag()
+        }
+        else {
+            this.isDragging = false
+            if (this.selectedSubPoints.length > 0 && this.creatingConnection != null) {
+                this.creatingConnection.cleanupPoints()
+                this.creatingConnection = null
+            }
+            this.selectedConnections = []
+            this.selectedSubPoints = []
+            this.snappingLines = []
+        }
+        this.handleCreating()
     }
 
     /**
@@ -757,20 +1164,7 @@ export class EditorState {
             return
         this.positionDelta = [event.offsetX - this.position[0], event.offsetY - this.position[1]]
         this.position = [event.offsetX, event.offsetY]
-
-        this.handleHover()
-        if (this.isKeybindHeld('pan') || (this.selectedNodes.length == 0 && event.pointerType == 'touch')) {
-            this.handlePan()
-        }
-        if (this.isKeybindHeld('move') && this.selectionStart == null) {
-            this.handleDrag()
-        }
-        else {
-            this.isDragging = false
-            this.selectedConnections = []
-            this.selectedSubPoints = []
-        }
-        this.handleCreating()
+        this.handleMove()
     }
 
     onTouchStart = (event) => {
@@ -893,7 +1287,7 @@ export class EditorState {
         this.primaryPressed = false
         this.secondaryPressed = false
 
-        Object.values(this.keybinds).forEach(kb => {if (kb.isMouse()) kb.release()})
+        this.keybinds.onPointerUp(event)
         this.updateCursor()
         this.updateInputs()
     }
@@ -930,7 +1324,7 @@ export class EditorState {
                 console.log('swap to 1')
             }
         }*/
-        Object.values(this.keybinds).forEach(kb => {if (!kb.isMouse() && event.code.toLowerCase() == kb.code) kb.press()})
+        this.keybinds.onKeyDown(event)
         if (!this.heldKeys.includes(event.code.toLowerCase()))
             this.heldKeys.push(event.code.toLowerCase())
         if (event.shiftKey && !this.heldKeys.includes('Shift'))
@@ -952,7 +1346,7 @@ export class EditorState {
      * @param {KeyboardEvent} event 
      */
     onKeyUp = (event) => {
-        Object.values(this.keybinds).forEach(kb => {if (!kb.isMouse() && event.code.toLowerCase() == kb.code) kb.release()})
+        this.keybinds.onKeyUp(event)
         if (this.heldKeys.includes(event.code.toLowerCase()))
             this.heldKeys.splice(this.heldKeys.indexOf(event.code.toLowerCase()), 1)
         if (!event.shiftKey && this.heldKeys.includes('Shift'))
@@ -990,7 +1384,7 @@ export class EditorState {
      * @param {FocusEvent} event 
      */
     onBlur = (event) => {
-        Object.values(this.keybinds).forEach(kb => kb.release())
+        this.keybinds.releaseAll()
         this.heldKeys = []
     }
 
@@ -1043,7 +1437,7 @@ export class EditorState {
             .filter((val, ind, arr) => arr.indexOf(val) == ind)
             .sort((a, b) => a.localeCompare(b))
 
-        const bind = this.keybinds.move
+        const bind = this.keybinds.get('move')
         categories.forEach(cat => {
 
             const nodes = Object.values(flow.nodeDefinitions)
@@ -1188,9 +1582,15 @@ export class EditorState {
             URL.revokeObjectURL(url)
         }
         else {
-            const url = new URL(location.href)
-            history.pushState(null, '', `${url.origin}${url.pathname}?share=${data}`)
-            document.querySelector('#share-input').showModal()
+            if (data.length >= 8000) {
+                showInfoModal('flow too big', 'The flow is too big to fit in the url, so you MUST download it instead!')
+            }
+            else {
+                const url = new URL(location.href)
+                history.pushState(null, '', `${url.origin}${url.pathname}?share=${data}`)
+                //document.querySelector('#share-input').showModal()
+                showInfoModal('saved', 'The flow has been saved to the page\'s URL.\nTo share it, copy it and send it wherever you so desire... it\'s pretty long though!')
+            }
         }
     }
 
@@ -1210,7 +1610,11 @@ export class EditorState {
         editor.flow.onload = this.onFlowLoad
         const canvas = editor.canvas
         this.canvas = canvas
-        document.oncontextmenu = e => e.preventDefault() // prevent save image/etc from popping up
+        document.oncontextmenu = e => {
+            if (!e.target?.search?.includes('share'))
+                e.preventDefault() // prevent save image/etc from popping up
+                // (except with share link)
+        }
         canvas.addEventListener('pointerdown', this.onPointerDown)
         document.addEventListener('pointerdown', this.onGlobalPointerDown)
         document.addEventListener('pointerup', this.onPointerUp)
@@ -1281,7 +1685,12 @@ export class EditorState {
         }
 
         const handleButton = (id, handler) => {
-            document.querySelector(`#${id}`).addEventListener('pointerup', handler)
+            const btn = document.querySelector(`#${id}`)
+            btn.addEventListener('pointerup', e => {
+                if (btn.hasAttribute('disabled'))
+                    return
+                handler(e)
+            })
         }
 
         const fileUpload = document.querySelector('#file')
@@ -1300,6 +1709,27 @@ export class EditorState {
 
         handleButton('download', () => this.handleSave(true))
         handleButton('save', () => setTimeout(() => this.handleSave(false), 100))
+        handleButton('share', async () => {
+            const data = this.editor.save(false)
+            data['thumbnail'] = this.canvas.toDataURL('image/jpeg')
+            const code = await fetch(this.editor.share_server + 'upload', { // ?upload_code=5
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            if (code.ok) {
+                const codes = await code.json()
+                const url = new URL(location.href)
+                const loc = `${url.origin}${url.pathname}?share=${codes.code}`
+                showInfoModal('shared', `Flow has been saved to <a href=${loc} target="_blank">${loc}</a>.<br />Data retention is <b>NOT</b> guarenteed so do not use this for saving your flows!`, true)
+            }
+            else {
+                console.error(code)
+                showInfoModal('failed to share', 'Could not share, please try again/later.')
+            }
+        })
 
         const exampleDialog = document.querySelector('#example-dialog')
         handleButton('examples', () => exampleDialog.showModal())
@@ -1342,51 +1772,9 @@ export class EditorState {
         }
 
         const settingsMenu = document.querySelector('#settings-dialog')
-        const settingsKeybinds = settingsMenu.querySelector('#keybinds')
         handleButton('settings', () => settingsMenu.showModal())
         {
-            this.loadKeybinds()
-            let changingKeybind = null
-            document.addEventListener('keydown', e => {
-                if (changingKeybind != null) {
-                    changingKeybind.code = e.code.toLowerCase()
-                    changingKeybind.button.value = changingKeybind.getKey()
-                    changingKeybind.button.blur()
-                    changingKeybind = null
-                    this.saveKeybinds()
-                }
-            })
-            document.addEventListener('pointerdown', e => {
-                if (changingKeybind != null) {
-                    changingKeybind.code = e.buttons
-                    changingKeybind.button.value = changingKeybind.getKey()
-                    changingKeybind.button.blur()
-                    changingKeybind = null
-                    this.saveKeybinds()
-                }
-            })
-
-            Object.entries(this.keybinds).reverse().forEach(bind => {
-                const input = document.createElement('input')
-                input.type = 'button'
-                input.value = bind[1].getKey()
-                input.classList.add('keybind', 'desktop')
-                bind[1].button = input
-                const label = document.createElement('label')
-                label.innerText = ' ' + bind[0] + ' - ' + bind[1].comment
-                label.classList.add('desktop')
-
-                input.onclick = () => {
-                    changingKeybind = bind[1]
-                    input.value = '...'
-                }
-
-                const br = document.createElement('br')
-                br.classList.add('desktop')
-                settingsKeybinds.parentNode.insertBefore(br, settingsKeybinds.nextSibling)
-                settingsKeybinds.parentNode.insertBefore(label, settingsKeybinds.nextSibling)
-                settingsKeybinds.parentNode.insertBefore(input, settingsKeybinds.nextSibling)
-            })
+            this.keybinds.load()
         }
 
         handleButton('fullscreen', () => {

@@ -3,12 +3,17 @@
     <head>
         <title>stream</title>
         <link rel="stylesheet" href="../css/editor.css">
-        <script language="javascript" src="../js/editor.js" type="module" async></script>
+        <!--<script language="javascript" src="../js/editor.js" type="module" async></script>-->
+        <script language="javascript" src="../../dist/app.js" type="module" async></script>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
         <link rel="icon" href="favicon.ico" />
         <meta name="viewport" content="user-scalable=0, maximum-scale=1, minimum-scale=1, width=device-width, initial-scale=1.0">
         <!-- meta gaming -->
         <meta name="title" content="stream">
+        <meta name="og:title" content="stream">
+        <meta name="og:description" content="With stream, you can create node flows with pre-defined environments to create and innovate.">
+        <meta name="og:image" content="https://stream.bytestorm.sh/banner.jpg">
+        <meta property="twitter:card" content="summary_large_image" />
         <!--<meta name="description" content="With stream, you can create node flows to test ideas, manage devices, and more all through a node-based editor.">-->
         <meta name="description" content="With stream, you can create node flows with pre-defined environments to create and innovate.">
         <!-- Google tag (gtag.js) -->
@@ -22,6 +27,14 @@
         </script>
     </head>
     <body>
+        <dialog id="popup-notice">
+            <form method="dialog">
+                <h1 id="notice-title" class="mono">summary</h1>
+                <p id="notice-body"></p>
+                <br />
+                <button>Alrighty</button>
+            </form>
+        </dialog>
         <dialog id="readonly-warning">
             <form method="dialog">
                 <h1>Uh oh!</h1>
@@ -87,7 +100,7 @@
                 <p>You can change the color of the connection in the top left</p>
                 <h3>Hotkeys & Advanced Features</h3>
                 <p>Use <b id="keybind-rotate">R</b> to rotate nodes by 90deg increments -- <i>Some nodes may be selected/interacted weirdly while rotated, it'll be fixed at some point</i></p>
-                <p>Use <b id="keybind-clone">E</b> to clone a connection at a hovered point, requires at least 1 extra point (aka: that isn't output to input)</p>
+                <p>Use <b id="keybind-clone">E</b> to clone a connection at a hovered point/segment</p>
                 <p>Use <b id="keybind-clone">F</b> to clone selected nodes (and the nodes' associated connections)</p>
                 <p>Hold <b id="keybind-persist">Shift</b> while placing connections to continue placing connections</p>
                 <p>Hold <b id="keybind-snap">Shift</b> while dragging nodes to snap them to the grid, you can't move them during however, planning to change</p>
@@ -137,20 +150,13 @@
                 <button onfocusout="this.parentElement.parentElement.returnValue = '#close'; this.parentElement.submit()" value="#close">Nevermind</button>
             </form>
         </dialog>
-        <dialog id="general-notice">
-            <form method="dialog">
-                <h1 id="general-notice-title">summary</h1>
-                <p id="general-notice-body"></p>
-                <br />
-                <button>Alrighty</button>
-            </form>
-        </dialog>
         <dialog id="settings-dialog">
             <form method="dialog">
                 <h1>settings</h1>
                 <p>Click to change a keybind.</p>
                 <h3 id="keybinds">keybinds</h3>
                 <p class="mobile">You cannot have keybinds, you goob!</p>
+                <h3 id="general">general</h3>
                 <h3>other</h3>
                 <button id="profiler">Open Profiler</button>
                 <br />
@@ -211,6 +217,10 @@
                     <li><button id="download" class="button">
                         <span class="icon material-symbols-outlined">download</span>
                         <span class="tooltip">Download</span>
+                    </button></li>
+                    <li><button id="share" class="button">
+                        <span class="icon material-symbols-outlined">share</span>
+                        <span class="tooltip">Share</span>
                     </button></li>
                     <li><button id="save" class="button">
                         <span class="icon material-symbols-outlined">save</span>

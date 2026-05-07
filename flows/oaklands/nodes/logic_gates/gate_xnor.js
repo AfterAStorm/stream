@@ -4,7 +4,7 @@ import { BaseNode } from "../../../node.js"
 
 export class Node extends BaseNode {
     static id         = "gate_xnor" // internally still the same though :p
-    static display    = "XAND" // renamed to XOR to make the peoples happy (and to be more in-line with the actual game)
+    static display    = "XAND"
     static size       = [1, 1.25]
     static icon       = "$assets/xnor_gate.png"//"https://static.wikia.nocookie.net/oaklands/images/7/76/ORgate.png"
     static category   = "logic gates"
@@ -20,18 +20,26 @@ export class Node extends BaseNode {
         this.cooldown = false
     }
 
-    update() {
+    _calculate() {
+        const left = this.getConnectionPointValue('#left')
+        const right = this.getConnectionPointValue('#right')
+        this.value = left == 0 && right == 0 ? 10 : (left == right ? left : (0))
+        return this.value
+    }
+
+    update(updatedValue) {
         super.update()
 
-        const currentOutput = this.getLocalConnectionPointValue('#result')
-        var setOutput = this.getConnectionPointValue('#left') ^ this.getConnectionPointValue('#right')
-        if (setOutput > 0)
-            setOutput = 0
-        else
-            setOutput = 10
-        
-        if (setOutput != currentOutput) {
-            this.setConnectionPointValue('#result', setOutput)
+        switch(updatedValue) {
+            case '#left':
+            case '#right':
+                this.invalidate()
+                this.setConnectionPointValue('#result', this._calculate())
+                break
+            default:
+                if (this.getLocalConnectionPointValue('#result') != this.value)
+                    this.setConnectionPointValue('#result', this.value)
+                break
         }
     }
 

@@ -58,8 +58,9 @@ export class Node extends BaseNode {
                 }
                 break
             default:
-                if (this.getLocalConnectionPointValue('#result') != this.value)
+                if (this.getLocalConnectionPointValue('#result') != this.value) {
                     this.setConnectionPointValue('#result', this.value)
+                }
                 break
         }
     }

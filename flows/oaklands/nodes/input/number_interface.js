@@ -36,12 +36,8 @@ export class Node extends BaseNode {
     update() {
         super.update()
 
-        // output
-        const currentOutput = this.getLocalConnectionPointValue('#result')
-        var setOutput = this.number
-        
-        if (setOutput != currentOutput) {
-            this.setConnectionPointValue('#result', setOutput)
+        if (this.getLocalConnectionPointValue('#result') != this.number) {
+            this.setConnectionPointValue('#result', this.number)
         }
     }
 

@@ -145,7 +145,8 @@ export class Flow {
                 c.value = c.nextValue ?? c.value
                 c.nextValue = null
                 c.points.forEach(p => {
-                    if (p.node == node)
+                    // we have to make sure we don't update other output nodes, otherwise bad stuff might happen?
+                    if (p.node == node || !p.node || p.type != 'input')
                         return
                     p.node.hasUpdated = true//false
                     p.node.needsSoftUpdate = false
@@ -230,7 +231,7 @@ export class Flow {
         })
         this.connections.forEach(c => {
             c.points.forEach(p => {
-                if (p.node != null)
+                if (p.node != null && !p.node._connections.includes(c))
                     p.node._connections.push(c)
             })
         })

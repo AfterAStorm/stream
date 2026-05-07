@@ -4,6 +4,7 @@ import { Flow } from "./flow.js"
 import { Profiler } from "./profiler.js"
 import { EditorState } from "./state.js"
 import { compress, decompress } from "./compression.js"
+import { showInfoModal } from "./modal.js"
 
 function strip(str, char) {
     while (str.startsWith(char))
@@ -14,6 +15,8 @@ function strip(str, char) {
 }
 
 class Editor {
+    share_server = 'https://stream-share.bytestorm.sh/'
+
     /**
      * 
      * @param {HTMLCanvasElement} canvas 
@@ -163,7 +166,7 @@ class Editor {
             
             context.fillStyle = '#555'
             context.font = '15px monospace'
-            const message = `${this.state.hoveredPoint.value} (o${this.flow.nodes.indexOf(this.state.hoveredPoint.node)})`
+            const message = `${this.state.hoveredPoint.value}`// (o${this.flow.nodes.indexOf(this.state.hoveredPoint.node)})`
             const valueSizeNeeded = context.measureText(message)
             context.beginPath()
             context.roundRect(pos[0] - valueSizeNeeded.width / 2, pos[1] + 20, valueSizeNeeded.width + 10, 20, 10)
@@ -177,7 +180,7 @@ class Editor {
             context.font = '15px monospace'
             context.textAlign = 'left'
             context.textBaseline = 'middle'
-            const message = `${this.state.hoveredConnection.value} (o${this.flow.connections.indexOf(this.state.hoveredConnection)})`
+            const message = `${this.state.hoveredConnection.value} (order ${this.state.hoveredConnection.getHoveringSegment(...this.state.position) ?? 'n/a'})`
             const valueSizeNeeded = context.measureText(message)
             context.beginPath()
             context.roundRect(pos[0] - valueSizeNeeded.width / 2, pos[1] + 20, valueSizeNeeded.width + 10, 20, 10)
@@ -190,11 +193,48 @@ class Editor {
         // draw selection
         if (this.state.selectionStart != null) {
             context.strokeStyle = '#faa'
+            context.lineWidth = 2
             context.setLineDash([5])
             context.beginPath()
             context.rect(this.state.selectionStart[0], this.state.selectionStart[1], pos[0] - this.state.selectionStart[0], pos[1] - this.state.selectionStart[1])
             context.stroke()
         }
+
+        // draw snap!
+        this.state.snappingLines.forEach(line => {
+            // [[srcx, srcy], [x, y]]
+            //const axis = this.state.snappingLine[0]
+            const src = this.state.flowToScreen(...line[0])
+            const point = this.state.flowToScreen(...line[1])
+            const dir = [point[0] - src[0], point[1] - src[1]]
+
+            var rect = [0, 0, canvas.width, canvas.height]
+
+            const to = [src[0] + dir[0] * 100, src[1] + dir[1] * 100] // we assume this is in bounds
+
+            //const slope = axis[0] == 0 ? 0 : axis[1] / axis[0] // rise/run
+            //const invslope = 1 / slope // rise/run
+
+            const from = [
+                src[0],//(point[0] + axis[0] * (-point[0])),
+                src[1]//(point[1] + axis[1] * ((canvas.width - point[0]) * -slope * point[1])),
+            ]
+
+            /*const to = [
+                point[0],//(point[0] + axis[0] * (canvas.width - point[0])),
+                point[1]//(point[1] + axis[1] * ((canvas.width - point[0]) * slope * point[1])),
+            ]*/
+
+            //console.log(axis, point, slope, from, to)
+
+            context.strokeStyle = '#faa'
+            context.lineWidth = 3
+            context.setLineDash([8])
+            context.beginPath()
+            context.moveTo(...from)
+            context.lineTo(...to)
+            context.stroke()
+        })
 
         profiler.close()
         profiler.close()
@@ -232,11 +272,11 @@ class Editor {
         //console.log(this.main_flow, saveState)
     }
 
-    save() { // "serialize/compress"
+    save(compressed=true) { // "serialize/compress"
         const data = this.main_flow.serialize()
         Object.entries(this.state.serialize()).forEach(pair => data[pair[0]] = pair[1])
 
-        return compress(data)
+        return compressed ? compress(data) : data
     }
 }
 
@@ -246,7 +286,7 @@ async function main() {
 
     const flowId = params.get('flow') || 'oaklands' // "oaklands" is "quote" on "quote" temporary
     const exampleName = params.get('example')
-    const shareData = params.get('share')
+    let shareData = params.get('share')
 
     // setup editor
     window.profiler = new Profiler() // draw profiler
@@ -257,22 +297,42 @@ async function main() {
 
     // handle params
     if (shareData != null) {
-        editor.load(shareData)
+        let shareContents = shareData
+        if (shareData.length == 8) {
+            // share code!
+            const request = await fetch(editor.share_server + 'share/' + shareData)
+            if (request.status !== 200)
+                shareContents = null
+            else
+                shareContents = await request.json()
+            if (shareContents == null) {
+                showInfoModal("failed to fetch share", "Could not fetch the shared flow, is it an invalid code or did you lose internet connection?")
+                shareData = null
+            }
+        }
+        if (shareContents != null) {
+            try {
+                editor.load(shareContents)
+                return
+            }
+            catch (e) {
+                console.error(e)
+            }
+        }
     }
-    else if (flowId != null) {
-        if (exampleName != null) {
-            document.querySelector('#file-name').innerHTML = exampleName
-            fetch(`../../flows/${flowId}/examples/${exampleName}.flow`).then(r => r.text()).then(data => editor.load(data))
-        }
-        else {
-            editor.load({
-                flow: flowId,
-                pan: [0, 0],
-                scale: 1,
-                connections: [],
-                nodes: []
-            })
-        }
+    
+    if (flowId != null && exampleName != null) {
+        document.querySelector('#file-name').innerHTML = exampleName
+        fetch(`../../flows/${flowId}/examples/${exampleName}.flow`).then(r => r.text()).then(data => editor.load(data))
+    }
+    else {
+        editor.load({
+            flow: flowId ?? 'oaklands',
+            pan: [0, 0],
+            scale: 1,
+            connections: [],
+            nodes: []
+        })
     }
 }
 

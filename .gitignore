@@ -3,3 +3,9 @@ package-lock.json
 .*
 !.gitignore
 *.xcf
+__pycache__/
+*.py
+Dockerfile
+*.db
+dist/
+shares/

@@ -27,6 +27,7 @@ export class Node extends BaseNode {
         this.setConnectionPointValue('#result', 0)
 
         this.cached = true
+        this.value = 0
 
         /*
         1 = add
@@ -48,6 +49,12 @@ export class Node extends BaseNode {
         super.deserialize(data)
         this.mode = data.mode
         this.setInteractableText('#config', OPERATION_CHARACTERS[this.mode])
+        this._calculate() // if it starts of in divide, make sure it is "inf"
+    }
+
+    _calculate() {
+        this.value = Math.max(this._math(this.getConnectionPointValue('#left'), this.getConnectionPointValue('#right')), 0)
+        return this.value
     }
 
     _math(a, b) {
@@ -59,23 +66,26 @@ export class Node extends BaseNode {
             case 3:
                 return a * b
             case 4:
-                return a / b
+                return b == 0 ? 1e+17 : a / b // 0 outputs max
             case 5:
                 return Math.pow(a, b)
         }
     }
 
-    update() {
+    update(updatedValue) {
         super.update()
 
-        // output
-        const currentOutput = this.getLocalConnectionPointValue('#result')
-        var setOutput = Math.max(this._math(this.getConnectionPointValue('#left'), this.getConnectionPointValue('#right')), 0)
-        if (Number.isNaN(setOutput))
-            setOutput = 0
-        
-        if (setOutput != currentOutput) {
-            this.setConnectionPointValue('#result', setOutput)
+        switch(updatedValue) {
+            case '#left':
+                this.setConnectionPointValue('#result', this._calculate())
+                break
+            case '#right':
+                this.setConnectionPointValue('#result', this._calculate())
+                break
+            default:
+                if (this.getLocalConnectionPointValue('#result') != this.value)
+                    this.setConnectionPointValue('#result', this.value)
+                break
         }
     }
 
@@ -86,6 +96,7 @@ export class Node extends BaseNode {
                 if (this.mode > 5)
                     this.mode = 1
                 this.setInteractableText('#config', OPERATION_CHARACTERS[this.mode])
+                this.setConnectionPointValue('#result', this._calculate())
                 this.invalidate()
                 break
         }

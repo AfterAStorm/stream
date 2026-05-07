@@ -12,26 +12,37 @@ export class Node extends BaseNode {
     constructor() {
         super()
         this.addConnectionPoint('input', 'left', '#left', 'Input')
-        this.addConnectionPoint('output', 'right', '#result', 'NOT Result, only outputs 10 when the input is 0\n**Outputs: ⚡ 10')
+        this.addConnectionPoint('output', 'right', '#result', 'NOT Result, when input > 0, return 0, else 10\n**Outputs: ⚡ 10')
         this.setConnectionPointValue('#result', 0)
 
         this.pressed = false
         this.cooldown = false
+        
+        this.value = 0
     }
 
     deserialize(data) {
         super.deserialize(data)
-        this.needsConnectionUpdate = true
+        this._calculate() // initial update
     }
 
-    update() {
+    _calculate() {
+        this.value = this.getConnectionPointValue('#left') ? 0 : 10
+        return this.value
+    }
+
+    update(updatedValue) {
         super.update()
 
-        const currentOutput = this.getLocalConnectionPointValue('#result')
-        var setOutput = this.getConnectionPointValue('#left') > 0 ? 0 : 10
-        
-        if (setOutput != currentOutput) {
-            this.setConnectionPointValue('#result', setOutput)
+        switch (updatedValue) {
+            case '#left':
+                this.invalidate()
+                this.setConnectionPointValue('#result', this._calculate())
+                break
+            default:
+                if (this.getLocalConnectionPointValue('#result') != this.value)
+                    this.setConnectionPointValue('#result', this.value)
+                break
         }
     }
 

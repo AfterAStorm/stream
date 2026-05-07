@@ -443,9 +443,11 @@ export class BaseNode {
             modalValue.select() // inputs are great technological advancements
         }, 75)
         return new Promise(res => {
-            modal.onclose = () => {
+            let callback; callback = () => {
                 res(modalValue.value)
+                modal.removeEventListener('close', callback)
             }
+            modal.addEventListener('close', callback)
         })
     }
 
@@ -459,9 +461,11 @@ export class BaseNode {
             modal.showModal()
         }, 75)
         return new Promise(res => {
-            modal.onclose = () => {
+            let callback; callback = () => {
                 res(modalValue.value)
+                modal.removeEventListener('close', callback)
             }
+            modal.addEventListener('close', callback)
         })
     }
 
@@ -543,6 +547,8 @@ export class BaseNode {
         const invalidated = this.connectionPoints.filter(p => p.invalidated)
         invalidated.forEach(p => p.invalidated = false)
         invalidated.forEach(p => this.update(p.id))
+        if (invalidated.length > 0)
+            this.needsConnectionUpdate = true
     }
 
     invalidate() {

@@ -150,7 +150,7 @@ export class Node extends BaseNode {
                 'mark': 8, // more like "highlight"?
                 'stroke': 9,
                 'font': 10,
-                'stroke': 11,
+                //'stroke': 11,
             }
 
             var contents = message.replaceAll(comments, '')//this.template

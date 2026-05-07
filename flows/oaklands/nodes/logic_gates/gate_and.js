@@ -21,33 +21,28 @@ export class Node extends BaseNode {
         this.pressed = false
         this.cooldown = false
 
-        this.lastLeft = 0
-        this.lastRight = 0
+        this.value = 0
     }
 
-    update() {
+    _calculate() {
+        const left = this.getConnectionPointValue('#left')
+        this.value = left == this.getConnectionPointValue('#right') ? left : 0
+        return this.value
+    }
+
+    update(updatedValue) {
         super.update()
 
-        const currentOutput = this.getLocalConnectionPointValue('#result')
-        var setOutput = 0
-        const left = this.getConnectionPointValue('#left')
-        const right = this.getConnectionPointValue('#right')
-        if (left == right) {
-            setOutput = left
-        }
-
-        if (left != this.lastLeft) {
-            this.lastLeft = left
-            this.invalidated = true
-        }
-
-        if (right != this.lastRight) {
-            this.lastRight = right
-            this.invalidated = true
-        }
-        
-        if (setOutput != currentOutput) {
-            this.setConnectionPointValue('#result', setOutput)
+        switch(updatedValue) {
+            case '#left':
+            case '#right':
+                this.invalidate()
+                this.setConnectionPointValue('#result', this._calculate())
+                break
+            default:
+                if (this.getLocalConnectionPointValue('#result') != this.value)
+                    this.setConnectionPointValue('#result', this.value)
+                break
         }
     }
 

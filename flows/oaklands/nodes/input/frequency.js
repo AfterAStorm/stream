@@ -17,6 +17,8 @@ export class Node extends BaseNode {
         this.setConnectionPointValue('#result', 0)
 
         this.speed = 1
+        this.signal = 0
+        this.value = 0
     }
 
     serialize() {
@@ -31,16 +33,39 @@ export class Node extends BaseNode {
         this.setInteractableText('#config', this.speed)
     }
 
-    update() {
+
+    _calculate() {
+        const gated = (Date.now() / 1000) % (this.speed * 2) > this.speed ? true : false
+        if (gated)
+            this.value = this.signal
+        else
+            this.value = 0
+        return this.value
+    }
+
+    update(updatedValue) {
         super.update()
 
-        // output
+        switch(updatedValue) {
+            case '#signal':
+                this.signal = this.getConnectionPointValue('#signal')
+                this.invalidate()
+                this.setConnectionPointValue('#result', this._calculate())
+                break
+            default:
+                this._calculate()
+                if (this.getLocalConnectionPointValue('#result') != this.value)
+                    this.setConnectionPointValue('#result', this.value)
+                break
+        }
+
+        /*// output
         const currentOutput = this.getConnectionPointValue('#result')
         var setOutput = (Date.now() / 1000) % (this.speed * 2) > this.speed ? this.getConnectionPointValue('#signal') : 0
         
         if (setOutput != currentOutput) {
             this.setConnectionPointValue('#result', setOutput)
-        }
+        }*/
     }
 
     input(action) {
