@@ -634,6 +634,7 @@ export class EditorState {
         const connections = this.editor.flow.getConnectionsAt(...this.position)
 
         if (this.creatingConnection != null) {
+            this.editor.flow.cutConnection(this.creatingConnection) // oopsies! left hanging connections
             this.deselectAll()
         }
         else if (this.selectedNodes.length > 0) {
@@ -1749,12 +1750,13 @@ export class EditorState {
         const summaryNodes = document.querySelector('#summary-nodes')
         const summaryConnections = document.querySelector('#summary-connections')
         handleButton('summary', () => {
-            summaryNodes.innerHTML = Object.entries(this.editor.flow.nodes.map(n => n.display).reduce((prev, cur) => {
+            const originNodes = this.selectedNodes != null && this.selectedNodes.length > 0 ? this.editor.flow.nodes.filter(n => this.selectedNodes.includes(n)) : this.editor.flow.nodes
+            summaryNodes.innerHTML = Object.entries(originNodes.map(n => n.display).reduce((prev, cur) => {
                 prev[cur] = prev[cur] ?? 0
                 prev[cur] += 1
                 return prev
             }, {})).sort((a, b) => b[1] - a[1]).map((v, i) => `x${v[1]} ${v[0]}`).join('<br />')
-            summaryConnections.innerHTML = Object.entries(this.editor.flow.connections.map(n => n.display).reduce((prev, cur) => {
+            summaryConnections.innerHTML = Object.entries(this.editor.flow.connections.filter(c => c.points.length > 1 && c.points.some(p => originNodes.includes(p.node))).map(n => n.display).reduce((prev, cur) => {
                 prev[cur] = prev[cur] ?? 0
                 prev[cur] += 1
                 return prev
