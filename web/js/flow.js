@@ -284,9 +284,12 @@ export class Flow {
 
     draw(context) {
         profiler.group('draw nodes')
+        let culledNode = false
         this.nodes.forEach(n => {
-            if (!this.isBoundsVisible(this.getNodeBounds(n)))
+            if (!this.isBoundsVisible(this.getNodeBounds(n))) {
+                culledNode = true
                 return
+            }
             context.save()
             const a = performance.now()
             n.draw(context)
@@ -295,7 +298,8 @@ export class Flow {
         })
         profiler.swap('draw connections')
         if (this.editor == null || this.editor.drawConnections != false) {
-            this.nodes.forEach(n => n.getConnectionPointPositions())
+            if (culledNode)
+                this.nodes.forEach(n => n.getConnectionPointPositions())
             this.connections.forEach(c => {
                 if (!this.isBoundsVisible(this.getConnectionBounds(c)))
                     return
