@@ -242,16 +242,15 @@ export class Flow {
      * @param {CanvasRenderingContext2D} context2
      */
     draw(context) {
+        profiler.group('draw nodes')
         this.nodes.forEach(n => {
             context.save()
             const a = performance.now()
-            profiler.group(`draw ${n.display} node${n.cached ? ' (cached)' : ''}`)
             n.draw(context)
-            profiler.close()
             n.debug.drawTime = performance.now() - a
             context.restore()
         })
-        profiler.group('draw connections')
+        profiler.swap('draw connections')
         if (this.editor == null || this.editor.drawConnections != false)
             this.connections.forEach(c => {
                 context.save()

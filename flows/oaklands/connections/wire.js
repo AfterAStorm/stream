@@ -414,12 +414,9 @@ export class Connection {
         if (!draw)
             return
 */
-        profiler.group('draw connection')
-        profiler.group('ghost check')
         //this.ghost = this.points.some(p => p.node.ghost)
         if (this.ghost)
             context.globalAlpha = .5
-        profiler.swap('alpha check')
         if (
             (this.editor != null && this != this.editor.creatingConnection) && (
                 (this.editor.hoveredPoint != null && !this.points.includes(this.editor.hoveredPoint)) ||
@@ -429,7 +426,6 @@ export class Connection {
             context.globalAlpha = .2
         }
 
-        profiler.swap('draw')
         context.lineCap = 'round'
         context.lineJoin = 'round'
         context.lineWidth = 5
@@ -462,7 +458,5 @@ export class Connection {
         context.lineWidth = 3
         context.strokeStyle = this.color
         context.stroke()
-        profiler.close()
-        profiler.close()
     }
 }
