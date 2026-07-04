@@ -68,6 +68,7 @@ export class BaseNode {
         this.cached = false
         this.invalidated = true
         this.cacheScale = 1
+        this.cachePadding = {left: 0, top: 0, right: 0, bottom: 0}
 
         // logic
         this.connectionPoints = []
@@ -336,6 +337,17 @@ export class BaseNode {
 
             context.restore()
         }
+    }
+
+    getCachePadding() {
+        const padding = {left: 0, top: 0, right: 0, bottom: 0}
+        for (const interactable of this.interactables.filter(i => i.type == 'bubble')) {
+            if (interactable.side == 'top')
+                padding.top = Math.max(padding.top, 20)
+            else
+                padding.bottom = Math.max(padding.bottom, 20)
+        }
+        return padding
     }
 
     sinkInput() {
@@ -614,27 +626,29 @@ export class BaseNode {
         context.fill()
 
         if (this.cached) {
-            const scaledSize = this.getSize(10)
-            if (this.cache == null) {
+            const dpr = window.devicePixelRatio || 1
+            this.cacheScale = Math.max(1, Math.min(4, (this.editor?.scale || 1) * dpr))
+            this.cachePadding = this.getCachePadding()
+            const cacheWidth = size[0] + this.cachePadding.left + this.cachePadding.right
+            const cacheHeight = size[1] + this.cachePadding.top + this.cachePadding.bottom
+            const scaledSize = [cacheWidth, cacheHeight].map(v => Math.max(1, Math.ceil(v * this.cacheScale)))
+            if (this.cache == null || this.cache.width != scaledSize[0] || this.cache.height != scaledSize[1]) {
                 this.cache = new OffscreenCanvas(...scaledSize)
-                //this.cache.width = scaledSize[0]
                 this.cacheContext = this.cache.getContext('2d', {alpha: true})
-            }
-            if (this.cache.width != scaledSize[0]) {
-                this.cache = new OffscreenCanvas(...scaledSize)
-                this.cacheContext = this.cache.getContext('2d', {alpha: true})
+                this.invalidated = true
             }
 
 
             if (!this.invalidated)
                 return null
             this.invalidated = false
-            this.cacheContext.reset()
-            this.cacheContext.resetTransform()
-            this.cacheScale = 2
-            this.cacheContext.translate(scaledSize[0] / 4, scaledSize[1] / 4)
-            //this.cacheContext.scale(1 / this.cacheScale * 5, 1 / this.cacheScale * 5)
-            this.cacheContext.scale(1 / this.cacheScale * 5, 1 / this.cacheScale * 5)
+            if (this.cacheContext.reset)
+                this.cacheContext.reset()
+            else
+                this.cacheContext.resetTransform()
+            this.cacheContext.clearRect(0, 0, ...scaledSize)
+            this.cacheContext.scale(this.cacheScale, this.cacheScale)
+            this.cacheContext.translate(this.cachePadding.left, this.cachePadding.top)
             context = this.cacheContext
             /*context.globalAlpha = .5
             context.fillStyle = '#f00' // debug cubes
@@ -674,7 +688,12 @@ export class BaseNode {
     }
 
     cacheDraw(context) {
-        const size = this.getSize(this.cacheScale)
-        context.drawImage(this.cache, -size[0] / 2, -size[1] / 2, ...this.getSize(2 * this.cacheScale))
+        if (this.cacheContext != null) {
+            this.cacheContext.imageSmoothingEnabled = true
+            this.cacheContext.imageSmoothingQuality = 'high'
+        }
+        const width = this.cache.width / this.cacheScale
+        const height = this.cache.height / this.cacheScale
+        context.drawImage(this.cache, -this.cachePadding.left, -this.cachePadding.top, width, height)
     }
 }

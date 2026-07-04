@@ -241,9 +241,52 @@ export class Flow {
      * Draw the flow to a canvas
      * @param {CanvasRenderingContext2D} context2
      */
+    isBoundsVisible(bounds, margin=80) {
+        const viewport = this.editor?.viewport
+        if (viewport == null)
+            return true
+        return (
+            bounds.right >= viewport.left - margin &&
+            bounds.left <= viewport.right + margin &&
+            bounds.bottom >= viewport.top - margin &&
+            bounds.top <= viewport.bottom + margin
+        )
+    }
+
+    getNodeBounds(node) {
+        const size = node.getSize()
+        return {
+            left: node.position[0],
+            top: node.position[1],
+            right: node.position[0] + size[0],
+            bottom: node.position[1] + size[1]
+        }
+    }
+
+    getConnectionBounds(connection) {
+        const bounds = {left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity}
+        connection.points.forEach(point => {
+            const position = point.node != null
+                ? [
+                    point.node.position[0] + (point.position?.[0] ?? 0),
+                    point.node.position[1] + (point.position?.[1] ?? 0)
+                ]
+                : point.position
+            if (position == null)
+                return
+            bounds.left = Math.min(bounds.left, position[0])
+            bounds.top = Math.min(bounds.top, position[1])
+            bounds.right = Math.max(bounds.right, position[0])
+            bounds.bottom = Math.max(bounds.bottom, position[1])
+        })
+        return bounds
+    }
+
     draw(context) {
         profiler.group('draw nodes')
         this.nodes.forEach(n => {
+            if (!this.isBoundsVisible(this.getNodeBounds(n)))
+                return
             context.save()
             const a = performance.now()
             n.draw(context)
@@ -251,12 +294,16 @@ export class Flow {
             context.restore()
         })
         profiler.swap('draw connections')
-        if (this.editor == null || this.editor.drawConnections != false)
+        if (this.editor == null || this.editor.drawConnections != false) {
+            this.nodes.forEach(n => n.getConnectionPointPositions())
             this.connections.forEach(c => {
+                if (!this.isBoundsVisible(this.getConnectionBounds(c)))
+                    return
                 context.save()
                 c.draw(context)
                 context.restore()
             })
+        }
         profiler.close()
     }
 
@@ -284,11 +331,11 @@ export class Flow {
             await flow.load()
 
         if (json.subflows && json.subflows.length > 0) {
-            json.subflows.forEach(subflow => {
+            for (const subflow of json.subflows) {
                 const instance = new Subflow(this) // not main_flow since subflows should never be able to have subflows
-                instance.deserialize(subflow, main_flow)
+                await instance.deserialize(subflow, main_flow)
                 flow.subflows.push(instance)
-            })
+            }
         }
         
         json.nodes.forEach(node => { // we assume this is in the correct order :p

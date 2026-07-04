@@ -32,13 +32,18 @@ class Editor {
         this.lastTimestamp = 0
         this.lastDraw = 0
         this.delta = 0
+        this.loading = false
         
         requestAnimationFrame(this.loop)
     }
 
     async update(dt) {
+        if (this.loading) {
+            this.delta = 0
+            return
+        }
         const millisecondsPerUpdate = (this.flow.updateSpeed || 1) * 1000
-        this.delta += dt
+        this.delta += Math.min(dt, 100)
 
         if (this.delta >= millisecondsPerUpdate)
             upprofiler.group('update')
@@ -73,22 +78,37 @@ class Editor {
         const scale = this.state.scale
         const gridSize = this.state.gridSize
 
-        // correct sizes
-        canvas.width = canvas.clientWidth
-        canvas.height = canvas.clientHeight
+        const dpr = window.devicePixelRatio || 1
+        const width = canvas.clientWidth
+        const height = canvas.clientHeight
+
+        // correct sizes. Reassigning canvas dimensions every frame clears the
+        // backing store and can leave large cached flows blank under load.
+        if (canvas.width != Math.round(width * dpr))
+            canvas.width = Math.round(width * dpr)
+        if (canvas.height != Math.round(height * dpr))
+            canvas.height = Math.round(height * dpr)
     
-        context.width = canvas.width
-        context.height = canvas.height
+        context.width = width
+        context.height = height
+        context.imageSmoothingEnabled = true
+        context.imageSmoothingQuality = 'high'
+        this.state.viewport = {
+            left: -pan[0],
+            top: -pan[1],
+            right: width * (1 / scale) - pan[0],
+            bottom: height * (1 / scale) - pan[1]
+        }
 
         // profile
         profiler.group('draw')
         profiler.group('grid')
 
         // clear
-        context.resetTransform()
+        context.setTransform(dpr, 0, 0, dpr, 0, 0)
         //context.clearRect(0, 0, canvas.width, canvas.height)
         context.fillStyle = '#777196'
-        context.fillRect(0, 0, context.width, context.height)
+        context.fillRect(0, 0, width, height)
 
         // draw grid
         context.strokeStyle = '#ddd'
@@ -98,17 +118,17 @@ class Editor {
         // this is incredibly elegant and i love it
         context.translate(pan[0] % gridSize, pan[1] % gridSize)
 
-        const width  = canvas.width  * (1 / scale) + gridSize * 2
-        const height = canvas.height * (1 / scale) + gridSize * 2
+        const gridWidth  = width  * (1 / scale) + gridSize * 2
+        const gridHeight = height * (1 / scale) + gridSize * 2
 
         context.beginPath()
-        for (let x = -gridSize * 2; x < width; x += gridSize) {
+        for (let x = -gridSize * 2; x < gridWidth; x += gridSize) {
             context.moveTo(x, -gridSize * 2)
-            context.lineTo(x, height)
+            context.lineTo(x, gridHeight)
         }
-        for (let y = -gridSize * 2; y < height; y += gridSize) {
+        for (let y = -gridSize * 2; y < gridHeight; y += gridSize) {
             context.moveTo(-gridSize * 2, y)
-            context.lineTo(width, y)
+            context.lineTo(gridWidth, y)
         }
         context.stroke()
 
@@ -116,7 +136,7 @@ class Editor {
     
         // draw nodes
         context.globalAlpha = 1
-        context.resetTransform()
+        context.setTransform(dpr, 0, 0, dpr, 0, 0)
         context.scale(scale, scale)
         context.translate(pan[0], pan[1])
 
@@ -144,7 +164,7 @@ class Editor {
         })
 
         // draw tooltips
-        context.resetTransform()
+        context.setTransform(dpr, 0, 0, dpr, 0, 0)
         const pos = this.state.position
         if (this.state.hoveredPoint != null) {
             context.fillStyle = '#ddd'
@@ -264,11 +284,24 @@ class Editor {
         requestAnimationFrame(this.loop)
     }
 
-    load(shareCompressedData) { // "decompress/deserialize"
-        const saveState = shareCompressedData instanceof Object ? shareCompressedData : decompress(shareCompressedData)
-        this.state.deserialize(saveState)
-        this.main_flow.deserialize(saveState)
-        this.flow = this.main_flow
+    async load(shareCompressedData) { // "decompress/deserialize"
+        this.loading = true
+        this.delta = 0
+        try {
+            const saveState = shareCompressedData instanceof Object ? shareCompressedData : decompress(shareCompressedData)
+            this.state.deserialize(saveState)
+            await this.main_flow.deserialize(saveState)
+            this.flow = this.main_flow
+            this.main_flow.nodes.forEach(node => {
+                node.invalidate()
+                node.needsConnectionUpdate = true
+            })
+            this.main_flow.connections.forEach(connection => connection.invalidatePoints?.())
+        }
+        finally {
+            this.delta = 0
+            this.loading = false
+        }
         //console.log(this.main_flow, saveState)
     }
 
@@ -312,7 +345,7 @@ async function main() {
         }
         if (shareContents != null) {
             try {
-                editor.load(shareContents)
+                await editor.load(shareContents)
                 return
             }
             catch (e) {
@@ -323,10 +356,11 @@ async function main() {
     
     if (flowId != null && exampleName != null) {
         document.querySelector('#file-name').innerHTML = exampleName
-        fetch(`../../flows/${flowId}/examples/${exampleName}.flow`).then(r => r.text()).then(data => editor.load(data))
+        const data = await fetch(`../../flows/${flowId}/examples/${exampleName}.flow`).then(r => r.text())
+        await editor.load(data)
     }
     else {
-        editor.load({
+        await editor.load({
             flow: flowId ?? 'oaklands',
             pan: [0, 0],
             scale: 1,
