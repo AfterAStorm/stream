@@ -341,6 +341,11 @@ export class BaseNode {
 
     getCachePadding() {
         const padding = {left: 0, top: 0, right: 0, bottom: 0}
+        const connectionPointPadding = 8
+        for (const point of this.connectionPoints) {
+            if (point.active)
+                padding[point.side] = Math.max(padding[point.side], connectionPointPadding)
+        }
         for (const interactable of this.interactables.filter(i => i.type == 'bubble')) {
             if (interactable.side == 'top')
                 padding.top = Math.max(padding.top, 20)
