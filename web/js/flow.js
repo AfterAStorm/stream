@@ -250,6 +250,8 @@ export class Flow {
     }
 
     getNodeBounds(node) {
+        if (node.getBounds != null)
+            return node.getBounds()
         const size = node.getSize()
         return {
             left: node.position[0],

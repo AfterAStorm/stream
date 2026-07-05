@@ -211,6 +211,29 @@ export class Node extends BaseNode {
         return positions
     }
 
+    getCachePadding() {
+        const padding = super.getCachePadding()
+        const size = this.getSize()
+        padding.bottom = Math.max(padding.bottom, size[1])
+        return padding
+    }
+
+    isHovering(x, y) {
+        const size = this.getSize()
+        return this.isHoveringRectangle(this.getRelative(x, y), 0, 0, size[0], size[1] * 2)
+    }
+
+    getBounds() {
+        const size = this.getSize()
+        const points = this.getRectanglePoints(0, 0, size[0], size[1] * 2)
+        return {
+            left: this.position[0] + Math.min(...points.map(p => p[0])),
+            top: this.position[1] + Math.min(...points.map(p => p[1])),
+            right: this.position[0] + Math.max(...points.map(p => p[0])),
+            bottom: this.position[1] + Math.max(...points.map(p => p[1]))
+        }
+    }
+
     /**
      * @param {CanvasRenderingContext2D} context 
      */
