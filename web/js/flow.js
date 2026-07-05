@@ -365,7 +365,7 @@ export class Flow {
 
             const created = new def()
             created.deserialize(connection, flow)
-            if (!created.a || !created.b)
+            if (created.points.length < 2)
                 return // damn
             flow.connections.push(created)
         })
