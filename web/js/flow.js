@@ -283,11 +283,12 @@ export class Flow {
     }
 
     draw(context) {
+        const drawConnections = this.editor == null || this.editor.drawConnections != false
         profiler.group('draw nodes')
-        let culledNode = false
         this.nodes.forEach(n => {
             if (!this.isBoundsVisible(this.getNodeBounds(n))) {
-                culledNode = true
+                if (drawConnections)
+                    n.getConnectionPointPositions()
                 return
             }
             context.save()
@@ -297,9 +298,7 @@ export class Flow {
             context.restore()
         })
         profiler.swap('draw connections')
-        if (this.editor == null || this.editor.drawConnections != false) {
-            if (culledNode)
-                this.nodes.forEach(n => n.getConnectionPointPositions())
+        if (drawConnections) {
             this.connections.forEach(c => {
                 if (!this.isBoundsVisible(this.getConnectionBounds(c)))
                     return
