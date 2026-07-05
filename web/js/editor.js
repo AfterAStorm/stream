@@ -286,7 +286,6 @@ class Editor {
 
     async load(shareCompressedData) { // "decompress/deserialize"
         this.loading = true
-        this.delta = 0
         try {
             const saveState = shareCompressedData instanceof Object ? shareCompressedData : decompress(shareCompressedData)
             this.state.deserialize(saveState)
