@@ -68,6 +68,7 @@ export class BaseNode {
         this.cached = false
         this.invalidated = true
         this.cacheScale = 1
+        this.cacheBypassed = false
         this.cachePadding = {left: 0, top: 0, right: 0, bottom: 0}
 
         // logic
@@ -630,31 +631,36 @@ export class BaseNode {
         context.roundRect(0, 0, ...size, 10)
         context.fill()
 
+        this.cacheBypassed = false
         if (this.cached) {
             const dpr = window.devicePixelRatio || 1
-            this.cacheScale = Math.max(1, Math.min(4, (this.editor?.scale || 1) * dpr))
-            this.cachePadding = this.getCachePadding()
-            const cacheWidth = size[0] + this.cachePadding.left + this.cachePadding.right
-            const cacheHeight = size[1] + this.cachePadding.top + this.cachePadding.bottom
-            const scaledSize = [cacheWidth, cacheHeight].map(v => Math.max(1, Math.ceil(v * this.cacheScale)))
-            if (this.cache == null || this.cache.width != scaledSize[0] || this.cache.height != scaledSize[1]) {
-                this.cache = new OffscreenCanvas(...scaledSize)
-                this.cacheContext = this.cache.getContext('2d', {alpha: true})
-                this.invalidated = true
+            const effectiveScale = (this.editor?.scale || 1) * dpr
+            this.cacheBypassed = effectiveScale >= 4
+
+            if (!this.cacheBypassed) {
+                this.cacheScale = Math.max(1, effectiveScale)
+                this.cachePadding = this.getCachePadding()
+                const cacheWidth = size[0] + this.cachePadding.left + this.cachePadding.right
+                const cacheHeight = size[1] + this.cachePadding.top + this.cachePadding.bottom
+                const scaledSize = [cacheWidth, cacheHeight].map(v => Math.max(1, Math.ceil(v * this.cacheScale)))
+                if (this.cache == null || this.cache.width != scaledSize[0] || this.cache.height != scaledSize[1]) {
+                    this.cache = new OffscreenCanvas(...scaledSize)
+                    this.cacheContext = this.cache.getContext('2d', {alpha: true})
+                    this.invalidated = true
+                }
+
+                if (!this.invalidated)
+                    return null
+                this.invalidated = false
+                if (this.cacheContext.reset)
+                    this.cacheContext.reset()
+                else
+                    this.cacheContext.resetTransform()
+                this.cacheContext.clearRect(0, 0, ...scaledSize)
+                this.cacheContext.scale(this.cacheScale, this.cacheScale)
+                this.cacheContext.translate(this.cachePadding.left, this.cachePadding.top)
+                context = this.cacheContext
             }
-
-
-            if (!this.invalidated)
-                return null
-            this.invalidated = false
-            if (this.cacheContext.reset)
-                this.cacheContext.reset()
-            else
-                this.cacheContext.resetTransform()
-            this.cacheContext.clearRect(0, 0, ...scaledSize)
-            this.cacheContext.scale(this.cacheScale, this.cacheScale)
-            this.cacheContext.translate(this.cachePadding.left, this.cachePadding.top)
-            context = this.cacheContext
             /*context.globalAlpha = .5
             context.fillStyle = '#f00' // debug cubes
             context.fillRect(-5000, -5000, 999999999, 99999999)
@@ -693,6 +699,8 @@ export class BaseNode {
     }
 
     cacheDraw(context) {
+        if (this.cacheBypassed)
+            return
         const width = this.cache.width / this.cacheScale
         const height = this.cache.height / this.cacheScale
         context.drawImage(this.cache, -this.cachePadding.left, -this.cachePadding.top, width, height)
