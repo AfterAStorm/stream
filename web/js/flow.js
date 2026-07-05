@@ -237,10 +237,6 @@ export class Flow {
         })
     }
 
-    /**
-     * Draw the flow to a canvas
-     * @param {CanvasRenderingContext2D} context2
-     */
     isBoundsVisible(bounds, margin=80) {
         const viewport = this.editor?.viewport
         if (viewport == null)
@@ -282,6 +278,10 @@ export class Flow {
         return bounds
     }
 
+    /**
+     * Draw the flow to a canvas
+     * @param {CanvasRenderingContext2D} context
+     */
     draw(context) {
         const drawConnections = this.editor == null || this.editor.drawConnections != false
         profiler.group('draw nodes')
