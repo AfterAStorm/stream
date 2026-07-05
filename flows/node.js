@@ -688,10 +688,6 @@ export class BaseNode {
     }
 
     cacheDraw(context) {
-        if (this.cacheContext != null) {
-            this.cacheContext.imageSmoothingEnabled = true
-            this.cacheContext.imageSmoothingQuality = 'high'
-        }
         const width = this.cache.width / this.cacheScale
         const height = this.cache.height / this.cacheScale
         context.drawImage(this.cache, -this.cachePadding.left, -this.cachePadding.top, width, height)
