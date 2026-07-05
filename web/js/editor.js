@@ -114,20 +114,24 @@ class Editor {
         context.strokeStyle = '#ddd'
         context.globalAlpha = .35
 
+        // bound the grid to a minimum 8px gap
+        const minGridSpacing = 8
+        const gridStep = gridSize * Math.max(1, Math.ceil(minGridSpacing / (gridSize * scale)))
+
         context.scale(scale, scale)
         // this is incredibly elegant and i love it
-        context.translate(pan[0] % gridSize, pan[1] % gridSize)
+        context.translate(pan[0] % gridStep, pan[1] % gridStep)
 
-        const gridWidth  = width  * (1 / scale) + gridSize * 2
-        const gridHeight = height * (1 / scale) + gridSize * 2
+        const gridWidth  = width  * (1 / scale) + gridStep * 2
+        const gridHeight = height * (1 / scale) + gridStep * 2
 
         context.beginPath()
-        for (let x = -gridSize * 2; x < gridWidth; x += gridSize) {
-            context.moveTo(x, -gridSize * 2)
+        for (let x = -gridStep * 2; x < gridWidth; x += gridStep) {
+            context.moveTo(x, -gridStep * 2)
             context.lineTo(x, gridHeight)
         }
-        for (let y = -gridSize * 2; y < gridHeight; y += gridSize) {
-            context.moveTo(-gridSize * 2, y)
+        for (let y = -gridStep * 2; y < gridHeight; y += gridStep) {
+            context.moveTo(-gridStep * 2, y)
             context.lineTo(gridWidth, y)
         }
         context.stroke()
