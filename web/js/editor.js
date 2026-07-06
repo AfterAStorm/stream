@@ -113,6 +113,8 @@ class Editor {
         // draw grid
         context.strokeStyle = '#ddd'
         context.globalAlpha = .35
+        context.lineWidth = 1
+        context.setLineDash([])
 
         // bound the grid to a minimum 8px gap
         const minGridSpacing = 8
