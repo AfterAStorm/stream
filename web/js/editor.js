@@ -33,8 +33,54 @@ class Editor {
         this.lastDraw = 0
         this.delta = 0
         this.loading = false
+        this.shouldResetContextEachFrame = false
+        this.contextResetBenchmarkDone = false
         
+        requestAnimationFrame(() => this.benchmarkContextReset())
         requestAnimationFrame(this.loop)
+    }
+
+    benchmarkContextReset() {
+        const context = this.context
+        if (!context.reset) {
+            this.contextResetBenchmarkDone = true
+            return
+        }
+
+        try {
+            const drawWork = reset => {
+                if (reset)
+                    context.reset()
+                context.setTransform(1, 0, 0, 1, 0, 0)
+                context.fillStyle = '#777196'
+                context.fillRect(0, 0, 1600, 900)
+                context.fillStyle = '#ddd'
+                context.strokeStyle = '#555'
+                context.rect(10, 10, 40, 20)
+                context.fill()
+                context.stroke()
+            }
+            const measure = reset => {
+                const iterations = 80
+                drawWork(reset)
+                const start = performance.now()
+                for (let i = 0; i < iterations; i++)
+                    drawWork(reset)
+                return performance.now() - start
+            }
+
+            const noResetMs = measure(false) + measure(false)
+            context.reset()
+            const resetMs = measure(true) + measure(true)
+            this.shouldResetContextEachFrame = resetMs < noResetMs * .8
+        }
+        catch (e) {
+            this.shouldResetContextEachFrame = false
+        }
+        finally {
+            this.contextResetBenchmarkDone = true
+            context.reset()
+        }
     }
 
     async update(dt) {
@@ -105,6 +151,8 @@ class Editor {
         profiler.group('grid')
 
         // clear
+        if (this.shouldResetContextEachFrame)
+            context.reset()
         context.setTransform(dpr, 0, 0, dpr, 0, 0)
         //context.clearRect(0, 0, canvas.width, canvas.height)
         context.fillStyle = '#777196'
