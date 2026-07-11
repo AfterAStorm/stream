@@ -77,6 +77,7 @@ export class KeybindManager {
         this.keybinds = keybinds
         this.changingKeybind = null
         this.createEvents()
+        this.load()
         Object.entries(keybinds).reverse().forEach(e => this.createUI(e))
     }
 
@@ -188,6 +189,7 @@ class Setting {
     constructor(comment, initial) {
         this.comment = comment
         this.value = initial
+        this.handlers = []
     }
 
     createInput() {
@@ -196,6 +198,16 @@ class Setting {
 
     getValue() {
         return null
+    }
+
+    addChangeHandler(handler) {
+        this.handlers.push(handler)
+        handler(this.getValue())
+    }
+
+    runHandlers() {
+        const value = this.getValue()
+        this.handlers.forEach(h => h(value))
     }
 
     update() {
@@ -272,8 +284,10 @@ export class SettingManager {
         const object = localStorage.getItem('settings')
         if (object != null) {
             Object.entries(JSON.parse(object)).forEach(e => {
-                if (this.settings[e[0]])
+                if (this.settings[e[0]]) {
                     this.settings[e[0]].value = e[1]
+                    this.settings[e[0]].runHandlers()
+                }
             })
         }
     }
@@ -303,6 +317,7 @@ export class SettingManager {
 
         input.onclick = () => {
             bind[1].update(input)
+            bind[1].runHandlers()
             this.save()
         }
 

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>stream</title>
+        <title>stream - node flow editor</title>
         <link rel="stylesheet" href="../css/editor.css">
         <!--<script language="javascript" src="../js/editor.js" type="module" async></script>-->
         <script language="javascript" src="../../dist/app.js" type="module" async></script>
@@ -103,7 +103,7 @@
                 <p>Use <b id="keybind-clone">E</b> to clone a connection at a hovered point/segment</p>
                 <p>Use <b id="keybind-clone">F</b> to clone selected nodes (and the nodes' associated connections)</p>
                 <p>Hold <b id="keybind-persist">Shift</b> while placing connections to continue placing connections</p>
-                <p>Hold <b id="keybind-snap">Shift</b> while dragging nodes to snap them to the grid, you can't move them during however, planning to change</p>
+                <p>Hold <b id="keybind-snap">Shift</b> while dragging nodes to snap them to the grid</p>
                 <p>Hold <b id="keybind-lasso">Control</b> and drag to multi-select; it's based on the nodes upper most left point at zero rotation.</p>
                 <p>You can enable interaction mode in the top left, letting you only "interact", being button presses and changing values while disabling node/connection movement. Useful for testing arrays of buttons and such.</p>
                 <!--<p>Press <b>Ctrl + Q</b> to enter/exit debug mode, and press <b>Q</b> to step a single update tick; green nodes are updated nodes, the brighter the farther from the source</p>
@@ -134,19 +134,8 @@
                 <h1>stream examples</h1>
                 <h3>Here is some examples to get you started:</h3>
                 <p><i>Clicking/interacting will replace the URL deleting any progress, beware!</i></p><br />
+                <div id="examples-list"></div>
                 <br />
-                <p><button value="new">New</button> <i>Create a blank flow</i></p>
-                <br />
-                <p><button value="logic_gates">Logic Gate Comparisons</button> <i>All of the logic gates in a "truth table" format</i></p>
-                <br />
-                <p><button value="tetherness">Tether Madness</button> <i>Fun fact you can do with looping wires</i></p>
-                <br />
-                <p><button value="binary">Counting w/ Binary</button> <i>Using binary outputs, count with binary!</i></p>
-                <br />
-                <p><button value="basic_counter">Basic LED Counter</button> <i>Using some basic logic to increment a counter for a multi-functional system</i></p>
-                <br />
-                <p><button value="keyboard">Keyboard</button> <i>The magic of blockers to create a keyboard (made by yours truly)</i></p>
-                <br /><br />
                 <button onfocusout="this.parentElement.parentElement.returnValue = '#close'; this.parentElement.submit()" value="#close">Nevermind</button>
             </form>
         </dialog>

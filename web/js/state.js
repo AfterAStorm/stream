@@ -66,7 +66,12 @@ export class EditorState {
             'segment snapped connections': new BoolSetting('should snap to lines on connections', true),
             'local snapped connections': new BoolSetting('should snap connections relative to last point', true),
             'grid snapped nodes': new BoolSetting('should snap nodes to "grid"', true),
-            'grid increment': new CycleSetting('cycle grid size increments', [['1 / 4', 1/4], ['1 / 2', 1/2], ['1', 1]])
+            'grid increment': new CycleSetting('cycle grid size increments', [['1 / 4', 1/4], ['1 / 2', 1/2], ['1', 1]]),
+            'theme': new CycleSetting('cycle editor theme', [['light', 'light'], ['dark', 'dark']]),
+        })
+
+        this.settings.get('theme').addChangeHandler((v) => {
+            this.onThemeChange(v)
         })
 
         this.inputType = 'mouse'
@@ -98,6 +103,14 @@ export class EditorState {
         // etc //
 
         this.debug = false
+    }
+
+    onThemeChange(newTheme) {
+        document.documentElement.setAttribute('data-theme', newTheme)
+        const theme = window.getComputedStyle(document.documentElement)
+        if (this.editor) { // only valid AFTER hook(...)
+            this.editor.backgroundColor = theme.getPropertyValue('--theme-background')
+        }
     }
 
     serialize() {
@@ -459,7 +472,7 @@ export class EditorState {
             const pos = this.getSnapFor(this.screenToFlow(this.position), this.creatingConnection.getPointPosition(this.creatingConnectionPointIndex))
             this.creatingConnection.addPoint(...pos)
             this.creatingConnection.addEdge(this.creatingConnectionPointIndex, this.creatingConnection.points.length - 1)
-            console.log(this.creatingConnection)
+            //console.log(this.creatingConnection)
             this.creatingConnectionPointIndex = this.creatingConnection.points.length - 1
         }
         else if (nodes.length > 0 && this.canSelect()) {
@@ -634,7 +647,8 @@ export class EditorState {
         const connections = this.editor.flow.getConnectionsAt(...this.position)
 
         if (this.creatingConnection != null) {
-            this.editor.flow.cutConnection(this.creatingConnection) // oopsies! left hanging connections
+            if (this.creatingConnection.edges.length == 0)
+                this.editor.flow.cutConnection(this.creatingConnection) // oopsies! left hanging connections
             this.deselectAll()
         }
         else if (this.selectedNodes.length > 0) {
@@ -648,6 +662,7 @@ export class EditorState {
                 // try to dissolve edges first
                 this.selectedNodes.forEach(node => {
                     this.editor.flow.getConnectionsTo(node).forEach(con => {
+                        con.getNodePoints().map(p => p.node).forEach(n => n.needsConnectionUpdate = true) // request update on connection change
                         const points = new Array(...con.points.entries().filter(p => p[1].node == node))
                         points.reverse().forEach(pi => {
                             con.getPointEdgeIndexes(pi[0]).reverse().forEach(e => con.dissolveEdge(e))
@@ -672,6 +687,7 @@ export class EditorState {
             connections.filter(c => c != this.creatingConnection).forEach(connection => {
                 const subpoint = connection.getHoveringSubPoint(...this.position)
                 const segment = connection.getHoveringSegment(...this.position)
+                connection.getNodePoints().map(p => p.node).forEach(n => {console.log(n);n.needsConnectionUpdate = true}) // request update on connection change
 
                 if (subpoint != null) {
                     // TODO: needs to check "graph connectivity"-- when point is removed, check if it splits or not
@@ -1440,7 +1456,6 @@ export class EditorState {
 
         const bind = this.keybinds.get('move')
         categories.forEach(cat => {
-
             const nodes = Object.values(flow.nodeDefinitions)
                 .filter(nd => nd.category == cat)
                 .sort((a, b) => a.display.localeCompare(b.display))
@@ -1452,6 +1467,35 @@ export class EditorState {
         })
         //this.testMake()
         this.refreshSidebar()
+
+        // populate examples *dynamically*!
+        const examplesDiv = document.querySelector('#examples-list')
+        while (examplesDiv.firstChild)
+            examplesDiv.removeChild(examplesDiv.lastChild)
+
+        flow.examples.forEach(ex => {
+            const p = document.createElement('p')
+            { // scopes to seperate, ignore impractical use
+                const button = document.createElement('button')
+                button.innerText = ex.name
+                button.addEventListener('click', async () => {
+                    // TODO: convert to load instead of reloading manually :D
+                    await this.editor.loadExample(this.editor.flow.id, ex.id)
+                    const url = new URL(location.href)
+                    history.pushState(null, '', `${url.pathname}?example=${ex.id}&flow=${this.editor.flow.id}`)
+                })
+                p.appendChild(button)
+            }
+            {
+                p.appendChild(document.createTextNode(' '))
+            }
+            {
+                const desc = document.createElement('i')
+                desc.innerText = ex.description
+                p.appendChild(desc)
+            }
+            examplesDiv.appendChild(p)
+        })
     }
 
     refreshSidebar() {
@@ -1608,6 +1652,7 @@ export class EditorState {
     hook(editor) {
         window.state = this
         this.editor = editor
+        this.onThemeChange(this.settings.getValue('theme'))
         editor.flow.onload = this.onFlowLoad
         const canvas = editor.canvas
         this.canvas = canvas
@@ -1734,7 +1779,7 @@ export class EditorState {
 
         const exampleDialog = document.querySelector('#example-dialog')
         handleButton('examples', () => exampleDialog.showModal())
-        {
+        /*{
             exampleDialog.addEventListener('close', () => {
                 const value = exampleDialog.returnValue
 
@@ -1744,7 +1789,7 @@ export class EditorState {
                     location.reload()
                 }
             })
-        }
+        }*/
 
         const summaryDialog = document.querySelector('#summary-notice')
         const summaryNodes = document.querySelector('#summary-nodes')
@@ -1776,7 +1821,7 @@ export class EditorState {
         const settingsMenu = document.querySelector('#settings-dialog')
         handleButton('settings', () => settingsMenu.showModal())
         {
-            this.keybinds.load()
+            //this.keybinds.load()
         }
 
         handleButton('fullscreen', () => {

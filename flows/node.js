@@ -125,7 +125,7 @@ export class BaseNode {
 
     /**
      * 
-     * @param {string} type 
+     * @param {'input' | 'output'} type 
      * @param {'top' | 'left' | 'bottom' | 'right'} side 
      * @param {string} id 
      * @param {string} tooltip 

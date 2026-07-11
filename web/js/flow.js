@@ -100,6 +100,9 @@ export class Flow {
             }))
         })
 
+        // doesn't need to be in loadFrom since only the main flow needs it, the EditorState reads to populate dialog
+        this.examples = manifest.examples
+
         // load other settings
         this.updateSpeed = manifest.updateSpeed
 
@@ -138,7 +141,19 @@ export class Flow {
             node.needsConnectionUpdate = false
             const connections = node._connections/*flow.connections.filter(c => node.connectionPoints.find(p => c.has(p)))*/
             const updating = []
-            connections.filter(c => c.points.find(p => p.node == node).type == 'output').forEach(c => {
+
+            // get call connections assosciated with this node... cache should skip this step? possibly?
+            const nodeConnections = connections // .filter(c => c.points.find(p => p.node == node))
+            // get all of THIS nodes input points 
+            // it CAN have duplicate points, since it flatMaps multiple connections
+            const inputsWithConnection = nodeConnections.flatMap(c => c.points).filter(p => (p.node == node && p.type == 'input'))
+            // if no input nodes have input connections, update them with 0
+            node.connectionPoints.filter(p => p.type == 'input' && !inputsWithConnection.includes(p)).forEach(p => {
+                node.update(p.id)
+            })
+            
+            // for each connection that contains our node's output nodes, update the connection
+            nodeConnections.filter(c => c.points.find(p => p.node == node).type == 'output').forEach(c => {
                 c.update()
                 if (depth > 0)
                     return
@@ -263,7 +278,7 @@ export class Flow {
 
     getConnectionBounds(connection) {
         const bounds = {left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity}
-        connection.points.forEach(point => {
+        connection.points.concat(connection.fakeEdge ? [connection.fakeEdge[1]] : []).forEach(point => {
             const position = point.node != null
                 ? [
                     point.node.position[0] + (point.position?.[0] ?? 0),

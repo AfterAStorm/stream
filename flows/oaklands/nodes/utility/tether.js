@@ -27,6 +27,7 @@ export class Node extends BaseNode {
         switch (updatedValue) {
             case '#passthrough':
                 this.setConnectionPointValue('#result', value)
+                this.invalidate()
                 break
         }
 

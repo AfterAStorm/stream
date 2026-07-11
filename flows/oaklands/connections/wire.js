@@ -265,6 +265,10 @@ export class Connection {
         return getPointPos(this.points[index]) // FLOW position, not SCREEN position!
     }
 
+    getNodePoints() {
+        return this.points.filter(p => p.node != null)
+    }
+
     invalidatePoints() {
         this.points.forEach(p => {
             if (p.node != null)

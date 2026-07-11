@@ -3,6 +3,33 @@
 
 :root {
     --theme-topbar: #bfb3ff;
+    --theme-topbar-title: #000;
+    --theme-topbar-file: #333;
+    --theme-topbar-icon: #000;
+    --theme-sidebar: #9f97cc;
+    --theme-sidebar-search: #837ca8;
+    --theme-sidebar-category: #8e87b6;
+    --theme-sidebar-item: #9891c2;
+    --theme-sidebar-item-hover: #8f86c5;
+    --theme-dialog-background: #fff;
+    --theme-dialog-foreground: #000;
+    --theme-background: #777196;
+}
+
+[data-theme="dark"] {
+    /*--theme-topbar: #bfb3ff;
+    --theme-topbar-title: #fff;
+    --theme-topbar-file: #ddd;
+    --theme-topbar-icon: #000;*/
+    --theme-topbar-tooltip: #fff; /* tooltips are over background */
+    /*--theme-sidebar: #1e193d;
+    --theme-sidebar-search: #1f1c2b;
+    --theme-sidebar-category: #2f2b50;
+    --theme-sidebar-item: #282438;
+    --theme-sidebar-item-hover: #393252;*/
+    --theme-dialog-background: #3a374b;
+    --theme-dialog-foreground: #f3f2f7;
+    --theme-background: #14121f;
 }
 
 /* editor */
@@ -29,7 +56,8 @@ dialog {
     transform: translate(-50%, -50%);
     border: none;
     padding: 10px;
-    background-color: #fff;
+    background-color: var(--theme-dialog-background);
+    color: var(--theme-dialog-foreground);
     border-radius: 5px;
 }
 
@@ -38,6 +66,7 @@ dialog {
 #topbar {
     height: 50px;
     background-color: var(--theme-topbar);
+    color: var(--theme-topbar-title);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -68,7 +97,7 @@ dialog {
     font-size: 1.5rem;
     background-color: transparent;
     outline: none;
-    color: #333;
+    color: var(--theme-topbar-file);
     font-family: monospace;
     font-weight: lighter;
     white-space: nowrap;
@@ -76,7 +105,7 @@ dialog {
 
 #file-name::placeholder {
     font-style: italic;
-    color: #333;
+    color: var(--theme-topbar-file);
 }
 
 #buttons {
@@ -86,10 +115,6 @@ dialog {
 
 #buttons-list > li {
     display: inline-block;
-}
-
-#buttons-list > li > button > span, #hamburger > span {
-    color: black;
 }
 
 #hamburger {
@@ -102,6 +127,7 @@ dialog {
     background-repeat: no-repeat;
     border: none;
     position: relative;
+    color: var(--theme-topbar-title);
 }
 
 .button:disabled {
@@ -119,7 +145,7 @@ dialog {
     display: none;
     text-align: center;
     font-size: 1rem;
-    color: black;
+    color: var(--theme-topbar-tooltip);
 }
 
 *:has(.tooltip):hover > .tooltip {
@@ -138,6 +164,7 @@ dialog {
   width: 30px;
   height: 30px;
   line-height: 30px !important;
+  color: var(--theme-topbar-icon)
 }
 
 /* sidebar styling */
@@ -145,7 +172,7 @@ dialog {
 #sidebar {
     width: 200px;
     height: 100%;
-    background-color: #9f97cc;
+    background-color: var(--theme-sidebar);
     flex-shrink: 0; /* prevent flexbox taking over */
     overflow-y: auto;
     overflow-x: hidden;
@@ -164,7 +191,7 @@ dialog {
 .category {
     width: 100%;
     text-align: left;
-    background-color: #8e87b6;
+    background-color: var(--theme-sidebar-category);
     font-size: 20px;
     font-family: monospace;
     padding-left: 2px;
@@ -175,7 +202,7 @@ dialog {
 .category:has(input) {
     position: sticky;
     top: 0;
-    background-color: #837ca8;
+    background-color: var(--theme-sidebar-search);
     padding-right: 2px;
     z-index: 2;
 }
@@ -206,7 +233,7 @@ input[type=search]::-webkit-search-cancel-button {
     display: flex;
     height: 100%;
     align-items: center;
-    background-color: #9891c2;
+    background-color: var(--theme-sidebar-item);
     font-weight: bold;
     font-size: 20px;
     font-family: monospace;
@@ -217,7 +244,7 @@ input[type=search]::-webkit-search-cancel-button {
 }
 
 .category-item:hover {
-    background-color: #8f86c5;
+    background-color: var(--theme-sidebar-item-hover);
 }
 
 .category-item > img {
@@ -343,6 +370,12 @@ p {
 .spoiler:hover {
     background-color: transparent;
     text-decoration: underline;
+}
+
+#examples-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
 }
 
 /* settings */

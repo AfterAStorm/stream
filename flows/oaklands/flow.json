@@ -70,5 +70,43 @@
         "subflow/subflow"
     ],
 
+    "examples": [
+        {
+            "name": "New",
+            "description": "Create a new flow",
+            "id": "new"
+        },
+        {
+            "name": "Logic Gate Comparisons",
+            "description": "All of the logic gates in a \"truth table\" format",
+            "id": "logic_gates"
+        },
+        {
+            "name": "Tether Madness",
+            "description": "Fun facts you can do with looping wires",
+            "id": "tetherness"
+        },
+        {
+            "name": "Binary",
+            "description": "Using binary outputs, count with binary!",
+            "id": "binary"
+        },
+        {
+            "name": "Basic LED Counter",
+            "description": "Using some basic logic to increment a counter for a multi-functional system",
+            "id": "basic_counter"
+        },
+        {
+            "name": "Keyboard",
+            "description": "The magic of buffers to create a keyboard",
+            "id": "keyboard"
+        },
+        {
+            "name": "Decimal Display",
+            "description": "A simple display that includes decimals",
+            "id": "decimal_display"
+        }
+    ],
+
     "updateSpeed": 0.01666666666
 }

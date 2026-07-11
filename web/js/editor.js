@@ -26,6 +26,9 @@ class Editor {
         this.context = canvas.getContext('2d')
         this.main_flow = new Flow() // core flow, contains subflows; (.subflows)-- managed with setting .flow
         this.flow = this.main_flow // active flow
+
+        this.backgroundColor = '#777196'
+
         this.state = new EditorState()
         this.state.hook(this)
 
@@ -155,7 +158,7 @@ class Editor {
             context.reset()
         context.setTransform(dpr, 0, 0, dpr, 0, 0)
         //context.clearRect(0, 0, canvas.width, canvas.height)
-        context.fillStyle = '#777196'
+        context.fillStyle = this.backgroundColor
         context.fillRect(0, 0, width, height)
 
         // draw grid
@@ -338,6 +341,17 @@ class Editor {
         requestAnimationFrame(this.loop)
     }
 
+    async loadExample(flowId, exampleName) {
+        const data = await fetch(`../../flows/${flowId}/examples/${exampleName}.flow`).then(r => r.ok ? r.text() : null).catch(r => null)
+        if (data) {
+            await editor.load(data)
+            editor.updateTitle(`example ${exampleName}`)
+            document.querySelector('#file-name').innerHTML = exampleName
+            return true
+        }
+        return false
+    }
+
     async load(shareCompressedData) { // "decompress/deserialize"
         this.loading = true
         try {
@@ -356,6 +370,10 @@ class Editor {
             this.loading = false
         }
         //console.log(this.main_flow, saveState)
+    }
+
+    updateTitle(subtext=null) {
+        document.querySelector('title').innerText = `stream${subtext ? ' - ' + subtext : ''}`
     }
 
     save(compressed=true) { // "serialize/compress"
@@ -386,16 +404,16 @@ async function main() {
         let shareContents = shareData
         if (shareData.length == 8) {
             // share code!
-            const request = await fetch(editor.share_server + 'share/' + shareData)
-            if (request.status !== 200)
-                shareContents = null
-            else
-                shareContents = await request.json()
+            shareContents = await fetch(editor.share_server + 'share/' + shareData).then(r => r.ok ? r.json() : null).catch(r => null)
             if (shareContents == null) {
                 showInfoModal("failed to fetch share", "Could not fetch the shared flow, is it an invalid code or did you lose internet connection?")
-                shareData = null
+            }
+            else {
+                editor.updateTitle(`share ${shareData}`)
             }
         }
+        else
+            editor.updateTitle(`shared flow`)
         if (shareContents != null) {
             try {
                 await editor.load(shareContents)
@@ -403,24 +421,25 @@ async function main() {
             }
             catch (e) {
                 console.error(e)
+                showInfoModal("failed to load share", "Couldn't load share(d) data, it might be malformed or outdated.")
             }
         }
     }
     
     if (flowId != null && exampleName != null) {
-        document.querySelector('#file-name').innerHTML = exampleName
-        const data = await fetch(`../../flows/${flowId}/examples/${exampleName}.flow`).then(r => r.text())
-        await editor.load(data)
+        if (await editor.loadExample(flowId, exampleName)) {
+            return
+        }
+        showInfoModal('failed to fetch example', `Could not get example ${exampleName}; does it exist or are there network issues?`)
     }
-    else {
-        await editor.load({
-            flow: flowId ?? 'oaklands',
-            pan: [0, 0],
-            scale: 1,
-            connections: [],
-            nodes: []
-        })
-    }
+    await editor.load({
+        flow: flowId ?? 'oaklands',
+        pan: [0, 0],
+        scale: 1,
+        connections: [],
+        nodes: []
+    })
+    editor.updateTitle(`new flow`)
 }
 
 if (document.readyState !== 'loading')
