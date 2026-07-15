@@ -33,6 +33,7 @@ const imageCache = {}
 
 function getImage(share_server, id, onload) {
     const img = new Image()
+    img.crossOrigin = 'anonymous'
     img.src = share_server + 'rblximg/' + id
     img.onerror = (e) => console.error(e)
     img.onload = onload
